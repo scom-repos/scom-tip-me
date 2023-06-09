@@ -16,7 +16,7 @@
     "@scom/scom-network-picker": "^0.1.1",
     "@scom/scom-network-list": "^0.1.1",
     "@scom/scom-wallet-modal": "^0.1.0",
-    "@scom/scom-token-input": "https://github.com/scom-repos/scom-token-modal",
+    "@scom/scom-token-input": "https://github.com/scom-repos/scom-token-input",
     "@scom/scom-dapp-container": "^0.1.4"
   },
   "devDependencies": {
