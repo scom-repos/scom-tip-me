@@ -39,6 +39,7 @@ interface ScomTipMeElement extends ControlElement {
   wallets: IWalletPlugin[];
   networks: INetworkConfig[];
   showHeader?: boolean;
+  lazyLoad?: boolean;
 }
 
 declare global {
@@ -466,7 +467,7 @@ export default class ScomTipMe extends Module {
       this.btnSend.enabled = false;
       return;
     }
-    if (this.tokenBalance.lt(amount)) {
+    if (this.tokenBalance.lt(this.tokenInput.amount)) {
       this.btnSend.caption = 'Insufficient Balance';
       this.btnSend.enabled = false;
       return;
@@ -531,31 +532,34 @@ export default class ScomTipMe extends Module {
       confirmation: confirmationCallBack
     })
 
-    sendToken(this.tokenObj, this._data.recipient, this.tokenInput.amount);
+    sendToken(this.tokenObj, this._data.recipient, this.tokenInput.amount, callBack, confirmationCallBack);
   }
 
   async init() {
     this.isReadyCallbackQueued = true;
     super.init();
-    const description = this.getAttribute('description', true);
-    const logo = this.getAttribute('logo', true);
-    const recipient = this.getAttribute('recipient', true);
-    const tokens = this.getAttribute('tokens', true, []);
-    const networks = this.getAttribute('networks', true, []);
-    const wallets = this.getAttribute('wallets', true, []);
-    const showHeader = this.getAttribute('showHeader', true);
-    const defaultChainId = this.getAttribute('defaultChainId', true);
-    setDefaultChainId(defaultChainId);
-    await this.setData({
-      logo,
-      description,
-      recipient,
-      tokens,
-      networks,
-      wallets,
-      showHeader,
-      defaultChainId
-    });
+    const lazyLoad = this.getAttribute('lazyLoad', true, false);
+    if (!lazyLoad) {
+      const description = this.getAttribute('description', true);
+      const logo = this.getAttribute('logo', true);
+      const recipient = this.getAttribute('recipient', true);
+      const tokens = this.getAttribute('tokens', true, []);
+      const networks = this.getAttribute('networks', true, []);
+      const wallets = this.getAttribute('wallets', true, []);
+      const showHeader = this.getAttribute('showHeader', true);
+      const defaultChainId = this.getAttribute('defaultChainId', true);
+      setDefaultChainId(defaultChainId);
+      await this.setData({
+        logo,
+        description,
+        recipient,
+        tokens,
+        networks,
+        wallets,
+        showHeader,
+        defaultChainId
+      });
+    }
     this.isReadyCallbackQueued = false;
     this.executeReadyCallback();
   }

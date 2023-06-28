@@ -19,7 +19,9 @@ export const formatNumberWithSeparators = (value: number, precision?: number) =>
   if (precision) {
     let outputStr = '';
     if (value >= 1) {
-      outputStr = value.toLocaleString('en-US', { maximumFractionDigits: precision });
+      const unit = Math.pow(10, precision);
+      const rounded = Math.floor(value * unit) / unit;
+      outputStr = rounded.toLocaleString('en-US', { maximumFractionDigits: precision });
     }
     else {
       outputStr = value.toLocaleString('en-US', { maximumSignificantDigits: precision });
@@ -39,7 +41,6 @@ export function parseContractError(oMessage: any): string {
   if (typeof oMessage === 'string') return oMessage;
 
   let message = '';
-  console.log(oMessage)
   if (oMessage.message && oMessage.message.includes('Internal JSON-RPC error.'))
     message = JSON.parse(oMessage.message.replace('Internal JSON-RPC error.\n', '')).message;
   else if (oMessage.message)

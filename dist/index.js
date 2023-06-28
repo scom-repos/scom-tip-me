@@ -193,7 +193,9 @@ define("@scom/scom-tip-me/utils/index.ts", ["require", "exports", "@ijstech/eth-
         if (precision) {
             let outputStr = '';
             if (value >= 1) {
-                outputStr = value.toLocaleString('en-US', { maximumFractionDigits: precision });
+                const unit = Math.pow(10, precision);
+                const rounded = Math.floor(value * unit) / unit;
+                outputStr = rounded.toLocaleString('en-US', { maximumFractionDigits: precision });
             }
             else {
                 outputStr = value.toLocaleString('en-US', { maximumSignificantDigits: precision });
@@ -213,7 +215,6 @@ define("@scom/scom-tip-me/utils/index.ts", ["require", "exports", "@ijstech/eth-
         if (typeof oMessage === 'string')
             return oMessage;
         let message = '';
-        console.log(oMessage);
         if (oMessage.message && oMessage.message.includes('Internal JSON-RPC error.'))
             message = JSON.parse(oMessage.message.replace('Internal JSON-RPC error.\n', '')).message;
         else if (oMessage.message)
@@ -13344,15 +13345,22 @@ define("@scom/scom-tip-me/API.ts", ["require", "exports", "@ijstech/eth-wallet",
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.sendToken = void 0;
-    const sendToken = async (token, recipient, amount) => {
-        const wallet = eth_wallet_5.Wallet.getClientInstance();
-        const value = eth_wallet_5.Utils.toDecimals(amount, token.decimals);
-        if (token.address) {
-            const contract = new index_3.Contracts.OSWAP_ERC20(wallet, token.address);
-            await contract.transfer({ to: recipient, value });
+    const sendToken = async (token, recipient, amount, callback, confirmationCallBack) => {
+        const wallet = eth_wallet_5.Wallet.getInstance();
+        try {
+            if (token.address) {
+                const value = eth_wallet_5.Utils.toDecimals(amount, token.decimals);
+                const contract = new index_3.Contracts.OSWAP_ERC20(wallet, token.address);
+                await contract.transfer({ to: recipient, value });
+            }
+            else {
+                const { transactionHash } = await wallet.send(recipient, Number(amount));
+                callback(undefined, transactionHash);
+                confirmationCallBack();
+            }
         }
-        else {
-            await wallet.send(recipient, value.toNumber());
+        catch (error) {
+            callback(error);
         }
     };
     exports.sendToken = sendToken;
@@ -13562,7 +13570,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                     this.btnSend.enabled = false;
                     return;
                 }
-                if (this.tokenBalance.lt(amount)) {
+                if (this.tokenBalance.lt(this.tokenInput.amount)) {
                     this.btnSend.caption = 'Insufficient Balance';
                     this.btnSend.enabled = false;
                     return;
@@ -13621,7 +13629,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                     transactionHash: callBack,
                     confirmation: confirmationCallBack
                 });
-                (0, API_1.sendToken)(this.tokenObj, this._data.recipient, this.tokenInput.amount);
+                (0, API_1.sendToken)(this.tokenObj, this._data.recipient, this.tokenInput.amount, callBack, confirmationCallBack);
             };
             if (data_json_1.default)
                 (0, index_5.setDataFromSCConfig)(data_json_1.default);
@@ -13877,25 +13885,28 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
         async init() {
             this.isReadyCallbackQueued = true;
             super.init();
-            const description = this.getAttribute('description', true);
-            const logo = this.getAttribute('logo', true);
-            const recipient = this.getAttribute('recipient', true);
-            const tokens = this.getAttribute('tokens', true, []);
-            const networks = this.getAttribute('networks', true, []);
-            const wallets = this.getAttribute('wallets', true, []);
-            const showHeader = this.getAttribute('showHeader', true);
-            const defaultChainId = this.getAttribute('defaultChainId', true);
-            (0, index_5.setDefaultChainId)(defaultChainId);
-            await this.setData({
-                logo,
-                description,
-                recipient,
-                tokens,
-                networks,
-                wallets,
-                showHeader,
-                defaultChainId
-            });
+            const lazyLoad = this.getAttribute('lazyLoad', true, false);
+            if (!lazyLoad) {
+                const description = this.getAttribute('description', true);
+                const logo = this.getAttribute('logo', true);
+                const recipient = this.getAttribute('recipient', true);
+                const tokens = this.getAttribute('tokens', true, []);
+                const networks = this.getAttribute('networks', true, []);
+                const wallets = this.getAttribute('wallets', true, []);
+                const showHeader = this.getAttribute('showHeader', true);
+                const defaultChainId = this.getAttribute('defaultChainId', true);
+                (0, index_5.setDefaultChainId)(defaultChainId);
+                await this.setData({
+                    logo,
+                    description,
+                    recipient,
+                    tokens,
+                    networks,
+                    wallets,
+                    showHeader,
+                    defaultChainId
+                });
+            }
             this.isReadyCallbackQueued = false;
             this.executeReadyCallback();
         }

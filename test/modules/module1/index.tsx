@@ -14,7 +14,7 @@ export default class Module1 extends Module {
 
     render() {
         return <i-panel>
-            <i-vstack id="mainStack" margin={{ top: '1rem', left: '1rem' }} gap="2rem">
+            <i-vstack id="mainStack" margin={{ top: '1rem', left: '1rem', right: '1rem', bottom: '1rem' }} gap="2rem">
                 <i-scom-tip-me
                     logo="ipfs://bafkreicdwbtx5niyhfzctxvxnwxjt3qfb3kyotrdpkdo26wky33lnt7lci"
                     description="If you like this Board, support with a Tip"

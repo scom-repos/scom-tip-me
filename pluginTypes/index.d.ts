@@ -9755,7 +9755,7 @@ declare module "@scom/scom-tip-me/contracts/oswap-openswap-contract/index.ts" {
 /// <amd-module name="@scom/scom-tip-me/API.ts" />
 declare module "@scom/scom-tip-me/API.ts" {
     import { ITokenObject } from "@scom/scom-tip-me/interface.tsx";
-    const sendToken: (token: ITokenObject, recipient: string, amount: string | number) => Promise<void>;
+    const sendToken: (token: ITokenObject, recipient: string, amount: string | number, callback: (error: Error, receipt?: string) => void, confirmationCallBack: () => void) => Promise<void>;
     export { sendToken };
 }
 /// <amd-module name="@scom/scom-tip-me/data.json.ts" />
@@ -9800,6 +9800,7 @@ declare module "@scom/scom-tip-me" {
         wallets: IWalletPlugin[];
         networks: INetworkConfig[];
         showHeader?: boolean;
+        lazyLoad?: boolean;
     }
     global {
         namespace JSX {
