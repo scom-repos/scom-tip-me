@@ -14,7 +14,7 @@ import { BigNumber, Constants, IEventBusRegistry, Wallet } from '@ijstech/eth-wa
 import { ICustomToken, IEmbedData } from './interface';
 import { getTokenBalance, parseContractError, registerSendTxEvents } from './utils/index';
 import { EventId, setDataFromSCConfig, getImageIpfsUrl, setDefaultChainId, getChainId, initRpcWallet, getRpcWallet, isRpcWalletConnected, isClientWalletConnected } from './store/index';
-import { ChainNativeTokenByChainId, DefaultERC20Tokens, ITokenObject } from '@scom/scom-token-list';
+import { ChainNativeTokenByChainId, DefaultERC20Tokens, ITokenObject, tokenStore } from '@scom/scom-token-list';
 import { buttonStyle, dappContainerStyle } from './index.css';
 import { Alert } from './alert/index';
 import { sendToken } from './API';
@@ -99,7 +99,7 @@ export default class ScomTipMe extends Module {
   }
 
   private onChainChanged = async () => {
-    this.updateTokenObject();
+    this.refreshTokenInfo();
   }
 
   static async create(options?: ScomTipMeElement, parent?: Container) {
@@ -357,6 +357,12 @@ export default class ScomTipMe extends Module {
 
   private refreshTokenInfo = async () => {
     if (!this.tokenInput.isConnected) await this.tokenInput.ready();
+    tokenStore.updateTokenMapData(getChainId());
+    const rpcWallet = getRpcWallet();
+    if (rpcWallet.address) {
+      await tokenStore.updateAllTokenBalances(rpcWallet);
+    }
+    await Wallet.getClientInstance().init();
     this.updateTokenObject();
     this.updateTokenInput();
   }
@@ -364,6 +370,7 @@ export default class ScomTipMe extends Module {
   private updateTokenObject = () => {
     const chainId = getChainId();
     const tokensByChainId = this.tokenList.filter(f => f.chainId === chainId);
+    this.tokenInput.rpcWalletId = chainId.toString();
     this.tokenInput.targetChainId = chainId;
     this.tokenInput.tokenDataListProp = tokensByChainId;
     this.tokenObj = tokensByChainId[0];
@@ -372,11 +379,7 @@ export default class ScomTipMe extends Module {
   }
 
   private updateTokenInput = async () => {
-    if (this.tokenObj && isRpcWalletConnected()) {
-      this.tokenBalance = await getTokenBalance(this.tokenObj);
-    } else {
-      this.tokenBalance = new BigNumber(0);
-    }
+    this.tokenBalance = new BigNumber(tokenStore.getTokenBalance(this.tokenObj) || 0);
     this.updateBtn();
   }
 

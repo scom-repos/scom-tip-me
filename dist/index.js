@@ -13552,7 +13552,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
             this.rpcWalletEvents = [];
             this.clientEvents = [];
             this.onChainChanged = async () => {
-                this.updateTokenObject();
+                this.refreshTokenInfo();
             };
             this.initializeWidgetConfig = async () => {
                 if (!this.imgLogo.isConnected)
@@ -13568,12 +13568,19 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
             this.refreshTokenInfo = async () => {
                 if (!this.tokenInput.isConnected)
                     await this.tokenInput.ready();
+                scom_token_list_1.tokenStore.updateTokenMapData((0, index_6.getChainId)());
+                const rpcWallet = (0, index_6.getRpcWallet)();
+                if (rpcWallet.address) {
+                    await scom_token_list_1.tokenStore.updateAllTokenBalances(rpcWallet);
+                }
+                await eth_wallet_6.Wallet.getClientInstance().init();
                 this.updateTokenObject();
                 this.updateTokenInput();
             };
             this.updateTokenObject = () => {
                 const chainId = (0, index_6.getChainId)();
                 const tokensByChainId = this.tokenList.filter(f => f.chainId === chainId);
+                this.tokenInput.rpcWalletId = chainId.toString();
                 this.tokenInput.targetChainId = chainId;
                 this.tokenInput.tokenDataListProp = tokensByChainId;
                 this.tokenObj = tokensByChainId[0];
@@ -13581,12 +13588,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                 this.tokenInput.tokenReadOnly = tokensByChainId.length <= 1;
             };
             this.updateTokenInput = async () => {
-                if (this.tokenObj && (0, index_6.isRpcWalletConnected)()) {
-                    this.tokenBalance = await (0, index_5.getTokenBalance)(this.tokenObj);
-                }
-                else {
-                    this.tokenBalance = new eth_wallet_6.BigNumber(0);
-                }
+                this.tokenBalance = new eth_wallet_6.BigNumber(scom_token_list_1.tokenStore.getTokenBalance(this.tokenObj) || 0);
                 this.updateBtn();
             };
             this.updateBtn = async () => {
