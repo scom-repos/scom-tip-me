@@ -1,19 +1,13 @@
+/// <reference path="@ijstech/eth-wallet/index.d.ts" />
+/// <reference path="@scom/scom-dapp-container/@ijstech/eth-wallet/index.d.ts" />
+/// <reference path="@scom/scom-token-input/@ijstech/eth-wallet/index.d.ts" />
+/// <reference path="@scom/scom-token-input/@scom/scom-token-modal/@ijstech/eth-wallet/index.d.ts" />
 /// <amd-module name="@scom/scom-tip-me/interface.tsx" />
 declare module "@scom/scom-tip-me/interface.tsx" {
-    import { IClientSideProvider, INetwork } from "@ijstech/eth-wallet";
+    import { INetwork } from "@ijstech/eth-wallet";
     import { INetworkConfig } from "@scom/scom-network-picker";
-    export interface PageBlock {
-        getData: () => any;
-        setData: (data: any) => Promise<void>;
-        getTag: () => any;
-        setTag: (tag: any) => Promise<void>;
-        defaultEdit?: boolean;
-        tag?: any;
-        readonly onEdit: () => Promise<void>;
-        readonly onConfirm: () => Promise<void>;
-        readonly onDiscard: () => Promise<void>;
-        confirm: () => Promise<void>;
-    }
+    import { ITokenObject } from "@scom/scom-token-list";
+    import { IWalletPlugin } from "@scom/scom-wallet-modal";
     export interface ICustomToken extends ITokenObject {
         chainId: number;
     }
@@ -35,24 +29,6 @@ declare module "@scom/scom-tip-me/interface.tsx" {
         networks: INetworkConfig[];
         showHeader?: boolean;
     }
-    export interface ITokenObject {
-        address?: string;
-        name: string;
-        decimals: number;
-        symbol: string;
-        status?: boolean | null;
-        logoURI?: string;
-        isCommon?: boolean | null;
-        balance?: string | number;
-        isNative?: boolean | null;
-        isWETH?: boolean | null;
-        isNew?: boolean | null;
-    }
-    export interface IWalletPlugin {
-        name: string;
-        packageName?: string;
-        provider?: IClientSideProvider;
-    }
     export interface IExtendedNetwork extends INetwork {
         shortName?: string;
         isDisabled?: boolean;
@@ -64,10 +40,47 @@ declare module "@scom/scom-tip-me/interface.tsx" {
         isTestnet?: boolean;
     }
 }
+/// <amd-module name="@scom/scom-tip-me/store/index.ts" />
+declare module "@scom/scom-tip-me/store/index.ts" {
+    import { IExtendedNetwork } from "@scom/scom-tip-me/interface.tsx";
+    export const enum EventId {
+        ConnectWallet = "connectWallet",
+        IsWalletConnected = "isWalletConnected",
+        IsWalletDisconnected = "IsWalletDisconnected",
+        chainChanged = "chainChanged",
+        Paid = "Paid"
+    }
+    export enum WalletPlugin {
+        MetaMask = "metamask",
+        WalletConnect = "walletconnect"
+    }
+    export const getNetworkInfo: (chainId: number) => IExtendedNetwork;
+    export const getSupportedNetworks: () => IExtendedNetwork[];
+    export const state: {
+        defaultChainId: number;
+        networkMap: {
+            [key: number]: IExtendedNetwork;
+        };
+        ipfsGatewayUrl: string;
+        rpcWalletId: string;
+    };
+    export const setDataFromSCConfig: (options: any) => void;
+    export const setIPFSGatewayUrl: (url: string) => void;
+    export const getIPFSGatewayUrl: () => string;
+    export const setDefaultChainId: (chainId: number) => void;
+    export const getDefaultChainId: () => number;
+    export const getImageIpfsUrl: (url: string) => string;
+    export function isClientWalletConnected(): boolean;
+    export function isRpcWalletConnected(): boolean;
+    export function getChainId(): number;
+    export function initRpcWallet(defaultChainId: number): string;
+    export function getRpcWallet(): import("@ijstech/eth-wallet").IRpcWallet;
+    export function getClientWallet(): import("@ijstech/eth-wallet").IClientWallet;
+}
 /// <amd-module name="@scom/scom-tip-me/utils/token.ts" />
 declare module "@scom/scom-tip-me/utils/token.ts" {
     import { BigNumber, IWallet, ISendTxEventsOptions } from "@ijstech/eth-wallet";
-    import { ITokenObject } from "@scom/scom-tip-me/interface.tsx";
+    import { ITokenObject } from "@scom/scom-token-list";
     export const getERC20Amount: (wallet: IWallet, tokenAddress: string, decimals: number) => Promise<BigNumber>;
     export const getTokenBalance: (token: ITokenObject) => Promise<BigNumber>;
     export const registerSendTxEvents: (sendTxEventHandlers: ISendTxEventsOptions) => void;
@@ -75,7 +88,7 @@ declare module "@scom/scom-tip-me/utils/token.ts" {
 /// <amd-module name="@scom/scom-tip-me/utils/approvalModel.ts" />
 declare module "@scom/scom-tip-me/utils/approvalModel.ts" {
     import { BigNumber } from "@ijstech/eth-wallet";
-    import { ITokenObject } from "@scom/scom-tip-me/interface.tsx";
+    import { ITokenObject } from "@scom/scom-token-list";
     export enum ApprovalStatus {
         TO_BE_APPROVED = 0,
         APPROVING = 1,
@@ -110,41 +123,8 @@ declare module "@scom/scom-tip-me/utils/index.ts" {
     export const formatNumber: (value: any, decimals?: number) => string;
     export const formatNumberWithSeparators: (value: number, precision?: number) => string;
     export function parseContractError(oMessage: any): string;
-    export function isWalletAddress(address: string): boolean;
     export { getERC20Amount, getTokenBalance, registerSendTxEvents } from "@scom/scom-tip-me/utils/token.ts";
     export { ApprovalStatus, getERC20Allowance, getERC20ApprovalModelAction, IERC20ApprovalOptions, IERC20ApprovalAction } from "@scom/scom-tip-me/utils/approvalModel.ts";
-}
-/// <amd-module name="@scom/scom-tip-me/store/index.ts" />
-declare module "@scom/scom-tip-me/store/index.ts" {
-    import { IExtendedNetwork } from "@scom/scom-tip-me/interface.tsx";
-    export const enum EventId {
-        ConnectWallet = "connectWallet",
-        IsWalletConnected = "isWalletConnected",
-        IsWalletDisconnected = "IsWalletDisconnected",
-        chainChanged = "chainChanged",
-        Paid = "Paid"
-    }
-    export enum WalletPlugin {
-        MetaMask = "metamask",
-        WalletConnect = "walletconnect"
-    }
-    export const getNetworkInfo: (chainId: number) => IExtendedNetwork;
-    export const getSupportedNetworks: () => IExtendedNetwork[];
-    export const state: {
-        defaultChainId: number;
-        networkMap: {
-            [key: number]: IExtendedNetwork;
-        };
-        ipfsGatewayUrl: string;
-    };
-    export const setDataFromSCConfig: (options: any) => void;
-    export const setIPFSGatewayUrl: (url: string) => void;
-    export const getIPFSGatewayUrl: () => string;
-    export const setDefaultChainId: (chainId: number) => void;
-    export const getDefaultChainId: () => number;
-    export function isWalletConnected(): boolean;
-    export const getChainId: () => number;
-    export const getImageIpfsUrl: (url: string) => string;
 }
 /// <amd-module name="@scom/scom-tip-me/index.css.ts" />
 declare module "@scom/scom-tip-me/index.css.ts" {
@@ -9754,7 +9734,7 @@ declare module "@scom/scom-tip-me/contracts/oswap-openswap-contract/index.ts" {
 }
 /// <amd-module name="@scom/scom-tip-me/API.ts" />
 declare module "@scom/scom-tip-me/API.ts" {
-    import { ITokenObject } from "@scom/scom-tip-me/interface.tsx";
+    import { ITokenObject } from '@scom/scom-token-list';
     const sendToken: (token: ITokenObject, recipient: string, amount: string | number, callback: (error: Error, receipt?: string) => void, confirmationCallBack: () => void) => Promise<void>;
     export { sendToken };
 }
@@ -9783,11 +9763,104 @@ declare module "@scom/scom-tip-me/data.json.ts" {
     };
     export default _default_48;
 }
+/// <amd-module name="@scom/scom-tip-me/formSchema.json.ts" />
+declare module "@scom/scom-tip-me/formSchema.json.ts" {
+    const _default_49: {
+        general: {
+            dataSchema: {
+                type: string;
+                properties: {
+                    logo: {
+                        type: string;
+                        required: boolean;
+                    };
+                    description: {
+                        type: string;
+                        required: boolean;
+                    };
+                    recipient: {
+                        type: string;
+                        required: boolean;
+                    };
+                    tokens: {
+                        type: string;
+                        required: boolean;
+                        items: {
+                            type: string;
+                            properties: {
+                                chainId: {
+                                    type: string;
+                                    enum: number[];
+                                    required: boolean;
+                                };
+                                address: {
+                                    type: string;
+                                    required: boolean;
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        theme: {
+            dataSchema: {
+                type: string;
+                properties: {
+                    dark: {
+                        type: string;
+                        properties: {
+                            backgroundColor: {
+                                type: string;
+                                format: string;
+                            };
+                            fontColor: {
+                                type: string;
+                                format: string;
+                            };
+                            inputBackgroundColor: {
+                                type: string;
+                                format: string;
+                            };
+                            inputFontColor: {
+                                type: string;
+                                format: string;
+                            };
+                        };
+                    };
+                    light: {
+                        type: string;
+                        properties: {
+                            backgroundColor: {
+                                type: string;
+                                format: string;
+                            };
+                            fontColor: {
+                                type: string;
+                                format: string;
+                            };
+                            inputBackgroundColor: {
+                                type: string;
+                                format: string;
+                            };
+                            inputFontColor: {
+                                type: string;
+                                format: string;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
+    export default _default_49;
+}
 /// <amd-module name="@scom/scom-tip-me" />
 declare module "@scom/scom-tip-me" {
     import { Module, Container, ControlElement } from '@ijstech/components';
-    import { ICustomToken, IEmbedData, IWalletPlugin } from "@scom/scom-tip-me/interface.tsx";
+    import { ICustomToken, IEmbedData } from "@scom/scom-tip-me/interface.tsx";
     import { INetworkConfig } from '@scom/scom-network-picker';
+    import { IWalletPlugin } from '@scom/scom-wallet-modal';
     interface ScomTipMeElement extends ControlElement {
         logo: string;
         description: string;
@@ -9823,14 +9896,13 @@ declare module "@scom/scom-tip-me" {
         private tokenObj;
         tag: any;
         defaultEdit: boolean;
-        readonly onConfirm: () => Promise<void>;
-        readonly onDiscard: () => Promise<void>;
-        readonly onEdit: () => Promise<void>;
+        private rpcWalletEvents;
+        private clientEvents;
         constructor(parent?: Container, options?: any);
-        static create(options?: ScomTipMeElement, parent?: Container): Promise<ScomTipMe>;
+        onHide(): void;
         private registerEvent;
-        private onWalletConnect;
         private onChainChanged;
+        static create(options?: ScomTipMeElement, parent?: Container): Promise<ScomTipMe>;
         get wallets(): IWalletPlugin[];
         set wallets(value: IWalletPlugin[]);
         get networks(): INetworkConfig[];
@@ -9839,7 +9911,13 @@ declare module "@scom/scom-tip-me" {
         set showHeader(value: boolean);
         get defaultChainId(): number;
         set defaultChainId(value: number);
-        private getSchema;
+        get description(): string;
+        set description(value: string);
+        get logo(): string;
+        set logo(value: string);
+        get tokens(): ICustomToken[];
+        set tokens(value: ICustomToken[]);
+        private get tokenList();
         private _getActions;
         getConfigurators(): ({
             name: string;
@@ -9871,14 +9949,8 @@ declare module "@scom/scom-tip-me" {
         setTag(value: any): Promise<void>;
         private updateStyle;
         private updateTheme;
-        get description(): string;
-        set description(value: string);
-        get logo(): string;
-        set logo(value: string);
-        get tokens(): ICustomToken[];
-        set tokens(value: ICustomToken[]);
-        private get tokenList();
-        private refreshDApp;
+        private initializeWidgetConfig;
+        private refreshTokenInfo;
         private updateTokenObject;
         private updateTokenInput;
         private updateBtn;

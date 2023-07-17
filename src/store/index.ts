@@ -1,5 +1,6 @@
-import { Wallet } from "@ijstech/eth-wallet";
+import { INetwork, Wallet } from "@ijstech/eth-wallet";
 import { IExtendedNetwork } from "../interface";
+import { application } from "@ijstech/components";
 
 export const enum EventId {
   ConnectWallet = 'connectWallet',
@@ -25,7 +26,8 @@ export const getSupportedNetworks = () => {
 export const state = {
   defaultChainId: 1,
   networkMap: {} as { [key: number]: IExtendedNetwork },
-  ipfsGatewayUrl: 'https://ipfs.scom.dev/ipfs/'
+  ipfsGatewayUrl: 'https://ipfs.scom.dev/ipfs/',
+  rpcWalletId: ''
 }
 
 export const setDataFromSCConfig = (options: any) => {
@@ -50,18 +52,51 @@ export const getDefaultChainId = () => {
   return state.defaultChainId;
 }
 
-export function isWalletConnected() {
-  const wallet = Wallet.getClientInstance();
-  return wallet.isConnected;
-}
-
-export const getChainId = () => {
-  const wallet = Wallet.getInstance();
-  return wallet?.chainId || getDefaultChainId();
-}
-
 export const getImageIpfsUrl = (url: string) => {
   if (url && url.startsWith("ipfs://"))
     return `${getIPFSGatewayUrl()}${url.substring(7)}`;
   return url;
+}
+
+export function isClientWalletConnected() {
+  const wallet = Wallet.getClientInstance();
+  return wallet.isConnected;
+}
+
+export function isRpcWalletConnected() {
+  const wallet = getRpcWallet();
+  return wallet?.isConnected;
+}
+
+export function getChainId() {
+  const rpcWallet = getRpcWallet();
+  return rpcWallet?.chainId;
+}
+
+export function initRpcWallet(defaultChainId: number) {
+  if (state.rpcWalletId) {
+    return state.rpcWalletId;
+  }
+  const clientWallet = Wallet.getClientInstance();
+  const networkList: INetwork[] = Object.values(application.store.networkMap);
+  const instanceId = clientWallet.initRpcWallet({
+    networks: networkList,
+    defaultChainId,
+    infuraId: application.store.infuraId,
+    multicalls: application.store.multicalls
+  });
+  state.rpcWalletId = instanceId;
+  if (clientWallet.address) {
+    const rpcWallet = Wallet.getRpcWalletInstance(instanceId);
+    rpcWallet.address = clientWallet.address;
+  }
+  return instanceId;
+}
+
+export function getRpcWallet() {
+  return Wallet.getRpcWalletInstance(state.rpcWalletId);
+}
+
+export function getClientWallet() {
+  return Wallet.getClientInstance();
 }
