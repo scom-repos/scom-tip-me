@@ -8,22 +8,22 @@ import {
   Container,
   IEventBus,
   application,
-  IDataSchema,
   ControlElement
 } from '@ijstech/components';
-import { BigNumber } from '@ijstech/eth-wallet';
-import { ICustomToken, IEmbedData, ITokenObject, IWalletPlugin } from './interface';
+import { BigNumber, Constants, IEventBusRegistry, Wallet } from '@ijstech/eth-wallet';
+import { ICustomToken, IEmbedData } from './interface';
 import { getTokenBalance, parseContractError, registerSendTxEvents } from './utils/index';
-import { EventId, setDataFromSCConfig, isWalletConnected, getImageIpfsUrl, setDefaultChainId, getChainId } from './store/index';
-import { ChainNativeTokenByChainId, DefaultERC20Tokens } from '@scom/scom-token-list';
+import { EventId, setDataFromSCConfig, getImageIpfsUrl, setDefaultChainId, getChainId, initRpcWallet, getRpcWallet, isRpcWalletConnected, isClientWalletConnected } from './store/index';
+import { ChainNativeTokenByChainId, DefaultERC20Tokens, ITokenObject } from '@scom/scom-token-list';
 import { buttonStyle, dappContainerStyle } from './index.css';
 import { Alert } from './alert/index';
 import { sendToken } from './API';
 import configData from './data.json';
+import formSchema from './formSchema.json';
 import { INetworkConfig } from '@scom/scom-network-picker';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import ScomTokenInput from '@scom/scom-token-input';
-import ScomWalletModal from '@scom/scom-wallet-modal';
+import ScomWalletModal, { IWalletPlugin } from '@scom/scom-wallet-modal';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -71,9 +71,8 @@ export default class ScomTipMe extends Module {
 
   tag: any = {}
   defaultEdit: boolean = true;
-  readonly onConfirm: () => Promise<void>;
-  readonly onDiscard: () => Promise<void>;
-  readonly onEdit: () => Promise<void>;
+  private rpcWalletEvents: IEventBusRegistry[] = [];
+  private clientEvents: any[] = [];
 
   constructor(parent?: Container, options?: any) {
     super(parent, options);
@@ -82,24 +81,31 @@ export default class ScomTipMe extends Module {
     this.registerEvent();
   }
 
+  onHide() {
+    this.dappContainer.onHide();
+    const rpcWallet = getRpcWallet();
+    for (let event of this.rpcWalletEvents) {
+      rpcWallet.unregisterWalletEvent(event);
+    }
+    this.rpcWalletEvents = [];
+    for (let event of this.clientEvents) {
+      event.unregister();
+    }
+    this.clientEvents = [];
+  }
+
+  private registerEvent() {
+    this.clientEvents.push(this.$eventBus.register(this, EventId.chainChanged, this.onChainChanged));
+  }
+
+  private onChainChanged = async () => {
+    this.updateTokenObject();
+  }
+
   static async create(options?: ScomTipMeElement, parent?: Container) {
     let self = new this(parent, options);
     await self.ready();
     return self;
-  }
-
-  private registerEvent() {
-    this.$eventBus.register(this, EventId.IsWalletConnected, () => this.onWalletConnect(true));
-    this.$eventBus.register(this, EventId.IsWalletDisconnected, () => this.onWalletConnect(false));
-    this.$eventBus.register(this, EventId.chainChanged, this.onChainChanged);
-  }
-
-  private onWalletConnect = async (connected: boolean) => {
-    this.updateTokenInput();
-  }
-
-  private onChainChanged = async (chainId: number) => {
-    this.updateTokenObject();
   }
 
   get wallets() {
@@ -130,93 +136,45 @@ export default class ScomTipMe extends Module {
     this._data.defaultChainId = value;
   }
 
-  private getSchema = () => {
-    const propertiesSchema: any = {
-      type: 'object',
-      properties: {
-        logo: {
-          type: 'string',
-          required: true
-        },
-        description: {
-          type: 'string',
-          required: true
-        },
-        recipient: {
-          type: 'string',
-          required: true
-        },
-        tokens: {
-          type: 'array',
-          required: true,
-          items: {
-            type: 'object',
-            properties: {
-              chainId: {
-                type: 'number',
-                enum: [1, 56, 137, 250, 97, 80001, 43113, 43114],
-                required: true
-              },
-              address: {
-                type: 'string',
-                required: true
-              }
-            }
-          }
-        }
-      }
-    }
-    const themeSchema: IDataSchema = {
-      type: 'object',
-      properties: {
-        "dark": {
-          type: 'object',
-          properties: {
-            backgroundColor: {
-              type: 'string',
-              format: 'color'
-            },
-            fontColor: {
-              type: 'string',
-              format: 'color'
-            },
-            inputBackgroundColor: {
-              type: 'string',
-              format: 'color'
-            },
-            inputFontColor: {
-              type: 'string',
-              format: 'color'
-            }
-          }
-        },
-        "light": {
-          type: 'object',
-          properties: {
-            backgroundColor: {
-              type: 'string',
-              format: 'color'
-            },
-            fontColor: {
-              type: 'string',
-              format: 'color'
-            },
-            inputBackgroundColor: {
-              type: 'string',
-              format: 'color'
-            },
-            inputFontColor: {
-              type: 'string',
-              format: 'color'
-            }
-          }
-        }
-      }
-    }
-    return this._getActions(propertiesSchema, themeSchema);
+  get description() {
+    return this._data.description ?? '';
+  }
+  set description(value: string) {
+    this._data.description = value;
   }
 
-  private _getActions(propertiesSchema: IDataSchema, themeSchema: IDataSchema) {
+  get logo() {
+    return this._data.logo ?? '';
+  }
+  set logo(value: string) {
+    this._data.logo = value;
+  }
+
+  get tokens() {
+    return this._data.tokens ?? [];
+  }
+  set tokens(value: ICustomToken[]) {
+    this._data.tokens = value;
+  }
+
+  private get tokenList() {
+    if (!this.tokens) return [];
+    let list = [];
+    for (const inputToken of this.tokens) {
+      const tokenAddress = inputToken.address?.toLowerCase();
+      const nativeToken = ChainNativeTokenByChainId[inputToken.chainId] as any;
+      if (!tokenAddress || tokenAddress === nativeToken?.symbol?.toLowerCase()) {
+        if (nativeToken) list.push({ ...nativeToken, chainId: inputToken.chainId });
+      } else {
+        const tokens = DefaultERC20Tokens[inputToken.chainId];
+        const token = tokens.find(v => v.address?.toLowerCase() === tokenAddress) as any;
+        if (token) list.push({ ...token, chainId: inputToken.chainId });
+      }
+    }
+    return list as ICustomToken[];
+  }
+
+  private _getActions() {
     const actions = [
       {
         name: 'Settings',
@@ -234,18 +192,18 @@ export default class ScomTipMe extends Module {
               if (userInputData.description != undefined) this._data.description = userInputData.description;
               if (userInputData.recipient != undefined) this._data.recipient = userInputData.recipient;
               this._data.tokens = userInputData.tokens || [];
-              this.refreshDApp();
+              this.initializeWidgetConfig();
               if (builder?.setData) builder.setData(this._data);
             },
             undo: async () => {
               this._data = { ..._oldData };
-              this.refreshDApp();
+              this.initializeWidgetConfig();
               if (builder?.setData) builder.setData(this._data);
             },
             redo: () => { }
           }
         },
-        userInputDataSchema: propertiesSchema
+        userInputDataSchema: formSchema.general.dataSchema
       },
       {
         name: 'Theme Settings',
@@ -270,9 +228,10 @@ export default class ScomTipMe extends Module {
             redo: () => { }
           }
         },
-        userInputDataSchema: themeSchema
+        userInputDataSchema: formSchema.theme.dataSchema
       }
     ]
+
     return actions
   }
 
@@ -282,15 +241,11 @@ export default class ScomTipMe extends Module {
       {
         name: 'Builder Configurator',
         target: 'Builders',
-        getActions: this.getSchema.bind(this),
+        getActions: this._getActions.bind(this),
         getData: this.getData.bind(this),
         setData: async (data: IEmbedData) => {
           const defaultData = configData.defaultBuilderData as any;
           await this.setData({ ...defaultData, ...data });
-          if (this.mdWallet) {
-            this.mdWallet.networks = this._data.networks;
-            this.mdWallet.wallets = this._data.wallets;
-          }
         },
         setTag: this.setTag.bind(this),
         getTag: this.getTag.bind(this)
@@ -298,7 +253,7 @@ export default class ScomTipMe extends Module {
       {
         name: 'Emdedder Configurator',
         target: 'Embedders',
-        getActions: this.getSchema.bind(this),
+        getActions: this._getActions.bind(this),
         getLinkParams: () => {
           const data = this._data || {};
           return {
@@ -331,11 +286,22 @@ export default class ScomTipMe extends Module {
 
   private async setData(data: IEmbedData) {
     this._data = data;
-    await this.refreshDApp();
-    if (this.mdWallet) {
-      this.mdWallet.networks = this._data.networks;
-      this.mdWallet.wallets = this._data.wallets;
+    const rpcWalletId = initRpcWallet(this.defaultChainId);
+    const rpcWallet = getRpcWallet();
+    const event = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.Connected, async (connected: boolean) => {
+      await this.refreshTokenInfo();
+    });
+    this.rpcWalletEvents.push(event);
+
+    const containerData = {
+      defaultChainId: this.defaultChainId,
+      wallets: this.wallets,
+      networks: this.networks,
+      showHeader: this.showHeader,
+      rpcWalletId: rpcWallet.instanceId
     }
+    if (this.dappContainer?.setData) this.dappContainer.setData(containerData);
+    await this.initializeWidgetConfig();
   }
 
   private getTag() {
@@ -380,58 +346,17 @@ export default class ScomTipMe extends Module {
     this.updateStyle('--colors-primary-main', this.tag[themeVar]?.buttonBackgroundColor);
   }
 
-  get description() {
-    return this._data.description ?? '';
-  }
-  set description(value: string) {
-    this._data.description = value;
-  }
-
-  get logo() {
-    return this._data.logo ?? '';
-  }
-  set logo(value: string) {
-    this._data.logo = value;
-  }
-
-  get tokens() {
-    return this._data.tokens ?? [];
-  }
-  set tokens(value: ICustomToken[]) {
-    this._data.tokens = value;
-  }
-
-  private get tokenList() {
-    if (!this.tokens) return [];
-    let list = [];
-    for (const inputToken of this.tokens) {
-      const tokenAddress = inputToken.address?.toLowerCase();
-      const nativeToken = ChainNativeTokenByChainId[inputToken.chainId] as any;
-      if (!tokenAddress || tokenAddress === nativeToken?.symbol?.toLowerCase()) {
-        if (nativeToken) list.push({ ...nativeToken, chainId: inputToken.chainId });
-      } else {
-        const tokens = DefaultERC20Tokens[inputToken.chainId];
-        const token = tokens.find(v => v.address?.toLowerCase() === tokenAddress) as any;
-        if (token) list.push({ ...token, chainId: inputToken.chainId });
-      }
-    }
-    return list;
-  }
-
-  private refreshDApp = async () => {
-    const data: any = {
-      defaultChainId: this.defaultChainId,
-      wallets: this.wallets,
-      networks: this.networks,
-      showHeader: this.showHeader
-    }
-    if (this.dappContainer?.setData) this.dappContainer.setData(data);
+  private initializeWidgetConfig = async () => {
     if (!this.imgLogo.isConnected) await this.imgLogo.ready();
     if (!this.lbDescription.isConnected) await this.lbDescription.ready();
     if (!this.tokenInput.isConnected) await this.tokenInput.ready();
-    this.tokenInput.tokenDataListProp = this.tokenList;
     this.imgLogo.url = getImageIpfsUrl(this.logo);
     this.lbDescription.caption = this.description;
+    this.refreshTokenInfo();
+  }
+
+  private refreshTokenInfo = async () => {
+    if (!this.tokenInput.isConnected) await this.tokenInput.ready();
     this.updateTokenObject();
     this.updateTokenInput();
   }
@@ -439,14 +364,15 @@ export default class ScomTipMe extends Module {
   private updateTokenObject = () => {
     const chainId = getChainId();
     const tokensByChainId = this.tokenList.filter(f => f.chainId === chainId);
-    this.tokenObj = tokensByChainId[0];
     this.tokenInput.targetChainId = chainId;
-    this.tokenInput.tokenReadOnly = tokensByChainId.length <= 1;
+    this.tokenInput.tokenDataListProp = tokensByChainId;
+    this.tokenObj = tokensByChainId[0];
     this.tokenInput.token = this.tokenObj ? { ...this.tokenObj, chainId } : undefined;
+    this.tokenInput.tokenReadOnly = tokensByChainId.length <= 1;
   }
 
   private updateTokenInput = async () => {
-    if (this.tokenObj && isWalletConnected()) {
+    if (this.tokenObj && isRpcWalletConnected()) {
       this.tokenBalance = await getTokenBalance(this.tokenObj);
     } else {
       this.tokenBalance = new BigNumber(0);
@@ -454,10 +380,12 @@ export default class ScomTipMe extends Module {
     this.updateBtn();
   }
 
-  private updateBtn = () => {
-    const isConnected = isWalletConnected();
-    this.btnSend.caption = isConnected ? 'Send' : 'Connect Wallet';
-    if (!isConnected) {
+  private updateBtn = async () => {
+    const isClientConnected = isClientWalletConnected();
+    const isRpcConnected = isRpcWalletConnected();
+    if (!this.btnSend.isConnected) await this.btnSend.ready();
+    if (!isClientConnected || !isRpcConnected) {
+      this.btnSend.caption = !isClientConnected ? 'Connect Wallet' : 'Switch Network';
       this.btnSend.enabled = true;
       return;
     }
@@ -490,8 +418,19 @@ export default class ScomTipMe extends Module {
   }
 
   private sendToken = async () => {
-    if (!isWalletConnected()) {
-      this.mdWallet.showModal();
+    if (!isClientWalletConnected()) {
+      if (this.mdWallet) {
+        await application.loadPackage('@scom/scom-wallet-modal', '*');
+        this.mdWallet.networks = this.networks;
+        this.mdWallet.wallets = this.wallets;
+        this.mdWallet.showModal();
+      }
+      return;
+    }
+    if (!isRpcWalletConnected()) {
+      const chainId = getChainId();
+      const clientWallet = Wallet.getClientInstance();
+      await clientWallet.switchNetwork(chainId);
       return;
     }
     if (!this.tokenObj || !this._data.recipient) return;
@@ -591,10 +530,7 @@ export default class ScomTipMe extends Module {
             />
           </i-vstack>
           <i-scom-tip-me-alert id="mdAlert" />
-          <i-scom-wallet-modal
-            id="mdWallet"
-            wallets={[]}
-          />
+          <i-scom-wallet-modal id="mdWallet" wallets={[]} />
         </i-panel>
       </i-scom-dapp-container>
     )
