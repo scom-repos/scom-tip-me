@@ -13569,12 +13569,8 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                 if (!this.tokenInput.isConnected)
                     await this.tokenInput.ready();
                 const chainId = (0, index_6.getChainId)();
-                scom_token_list_1.tokenStore.updateTokenMapData(chainId);
                 const rpcWallet = (0, index_6.getRpcWallet)();
-                const { address, instanceId } = rpcWallet;
-                if (address) {
-                    await scom_token_list_1.tokenStore.updateAllTokenBalances(rpcWallet);
-                }
+                const { instanceId } = rpcWallet;
                 if (instanceId && instanceId !== this.tokenInput.rpcWalletId) {
                     this.tokenInput.rpcWalletId = instanceId;
                 }
@@ -13591,11 +13587,12 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                 const tokensByChainId = this.tokenList.filter(f => f.chainId === chainId);
                 this.tokenInput.tokenDataListProp = tokensByChainId;
                 this.tokenObj = tokensByChainId[0];
-                this.tokenInput.token = this.tokenObj ? Object.assign(Object.assign({}, this.tokenObj), { chainId }) : undefined;
+                this.tokenInput.token = this.tokenObj ? Object.assign({}, this.tokenObj) : undefined;
                 this.tokenInput.tokenReadOnly = tokensByChainId.length <= 1;
             };
             this.updateTokenInput = async () => {
-                this.tokenBalance = new eth_wallet_6.BigNumber(scom_token_list_1.tokenStore.getTokenBalance(this.tokenObj) || 0);
+                var _a;
+                this.tokenBalance = ((_a = this.tokenObj) === null || _a === void 0 ? void 0 : _a.chainId) === (0, index_6.getChainId)() ? await (0, index_5.getTokenBalance)(this.tokenObj) : new eth_wallet_6.BigNumber(0);
                 this.updateBtn();
             };
             this.updateBtn = async () => {

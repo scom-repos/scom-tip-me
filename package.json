@@ -26,7 +26,7 @@
   },
   "scripts": {
     "copy": "sh ./scripts/copy.sh",
-    "build": "rm -rf dist && npx @ijstech/compiler && cp -p dist/index.js test/dist/libs/@scom/scom-tip-me",
+    "build": "rm -rf dist && npx @ijstech/compiler",
     "serve": "npx @ijstech/cli serve 8080",
     "test": "cd test && npm run test && cd .."
   }

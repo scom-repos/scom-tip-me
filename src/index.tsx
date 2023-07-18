@@ -14,7 +14,7 @@ import { BigNumber, Constants, IEventBusRegistry, Wallet } from '@ijstech/eth-wa
 import { ICustomToken, IEmbedData } from './interface';
 import { getTokenBalance, parseContractError, registerSendTxEvents } from './utils/index';
 import { EventId, setDataFromSCConfig, getImageIpfsUrl, setDefaultChainId, getChainId, initRpcWallet, getRpcWallet, isRpcWalletConnected, isClientWalletConnected } from './store/index';
-import { ChainNativeTokenByChainId, DefaultERC20Tokens, ITokenObject, tokenStore } from '@scom/scom-token-list';
+import { ChainNativeTokenByChainId, DefaultERC20Tokens, ITokenObject } from '@scom/scom-token-list';
 import { buttonStyle, dappContainerStyle } from './index.css';
 import { Alert } from './alert/index';
 import { sendToken } from './API';
@@ -358,12 +358,8 @@ export default class ScomTipMe extends Module {
   private refreshTokenInfo = async () => {
     if (!this.tokenInput.isConnected) await this.tokenInput.ready();
     const chainId = getChainId();
-    tokenStore.updateTokenMapData(chainId);
     const rpcWallet = getRpcWallet();
-    const { address, instanceId } = rpcWallet;
-    if (address) {
-      await tokenStore.updateAllTokenBalances(rpcWallet);
-    }
+    const { instanceId } = rpcWallet;
     if (instanceId && instanceId !== this.tokenInput.rpcWalletId) {
       this.tokenInput.rpcWalletId = instanceId;
     }
@@ -380,12 +376,12 @@ export default class ScomTipMe extends Module {
     const tokensByChainId = this.tokenList.filter(f => f.chainId === chainId);
     this.tokenInput.tokenDataListProp = tokensByChainId;
     this.tokenObj = tokensByChainId[0];
-    this.tokenInput.token = this.tokenObj ? { ...this.tokenObj, chainId } : undefined;
+    this.tokenInput.token = this.tokenObj ? { ...this.tokenObj } : undefined;
     this.tokenInput.tokenReadOnly = tokensByChainId.length <= 1;
   }
 
   private updateTokenInput = async () => {
-    this.tokenBalance = new BigNumber(tokenStore.getTokenBalance(this.tokenObj) || 0);
+    this.tokenBalance = this.tokenObj?.chainId === getChainId() ?  await getTokenBalance(this.tokenObj) : new BigNumber(0);
     this.updateBtn();
   }
 
