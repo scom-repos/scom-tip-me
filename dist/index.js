@@ -13568,20 +13568,27 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
             this.refreshTokenInfo = async () => {
                 if (!this.tokenInput.isConnected)
                     await this.tokenInput.ready();
-                scom_token_list_1.tokenStore.updateTokenMapData((0, index_6.getChainId)());
+                const chainId = (0, index_6.getChainId)();
+                scom_token_list_1.tokenStore.updateTokenMapData(chainId);
                 const rpcWallet = (0, index_6.getRpcWallet)();
-                if (rpcWallet.address) {
+                const { address, instanceId } = rpcWallet;
+                if (address) {
                     await scom_token_list_1.tokenStore.updateAllTokenBalances(rpcWallet);
                 }
-                await eth_wallet_6.Wallet.getClientInstance().init();
+                if (instanceId && instanceId !== this.tokenInput.rpcWalletId) {
+                    this.tokenInput.rpcWalletId = instanceId;
+                }
+                this.tokenInput.targetChainId = chainId;
+                try {
+                    await eth_wallet_6.Wallet.getClientInstance().init();
+                }
+                catch (_a) { }
                 this.updateTokenObject();
                 this.updateTokenInput();
             };
             this.updateTokenObject = () => {
                 const chainId = (0, index_6.getChainId)();
                 const tokensByChainId = this.tokenList.filter(f => f.chainId === chainId);
-                this.tokenInput.rpcWalletId = chainId.toString();
-                this.tokenInput.targetChainId = chainId;
                 this.tokenInput.tokenDataListProp = tokensByChainId;
                 this.tokenObj = tokensByChainId[0];
                 this.tokenInput.token = this.tokenObj ? Object.assign(Object.assign({}, this.tokenObj), { chainId }) : undefined;

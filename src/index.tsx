@@ -357,12 +357,20 @@ export default class ScomTipMe extends Module {
 
   private refreshTokenInfo = async () => {
     if (!this.tokenInput.isConnected) await this.tokenInput.ready();
-    tokenStore.updateTokenMapData(getChainId());
+    const chainId = getChainId();
+    tokenStore.updateTokenMapData(chainId);
     const rpcWallet = getRpcWallet();
-    if (rpcWallet.address) {
+    const { address, instanceId } = rpcWallet;
+    if (address) {
       await tokenStore.updateAllTokenBalances(rpcWallet);
     }
-    await Wallet.getClientInstance().init();
+    if (instanceId && instanceId !== this.tokenInput.rpcWalletId) {
+      this.tokenInput.rpcWalletId = instanceId;
+    }
+    this.tokenInput.targetChainId = chainId;
+    try {
+      await Wallet.getClientInstance().init();
+    } catch { }
     this.updateTokenObject();
     this.updateTokenInput();
   }
@@ -370,8 +378,6 @@ export default class ScomTipMe extends Module {
   private updateTokenObject = () => {
     const chainId = getChainId();
     const tokensByChainId = this.tokenList.filter(f => f.chainId === chainId);
-    this.tokenInput.rpcWalletId = chainId.toString();
-    this.tokenInput.targetChainId = chainId;
     this.tokenInput.tokenDataListProp = tokensByChainId;
     this.tokenObj = tokensByChainId[0];
     this.tokenInput.token = this.tokenObj ? { ...this.tokenObj, chainId } : undefined;
