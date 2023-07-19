@@ -22,3 +22,15 @@ export const buttonStyle = Styles.style({
     }
   }
 })
+
+export const tokenInputStyle = Styles.style({
+  $nest: {
+    '#gridTokenInput': {
+      borderRadius: 16,
+      paddingBlock: '8px !important'
+    },
+    '#btnToken': {
+      minWidth: 120
+    }
+  }
+})

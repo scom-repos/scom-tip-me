@@ -14,8 +14,8 @@ import { BigNumber, Constants, IEventBusRegistry, Wallet } from '@ijstech/eth-wa
 import { ICustomToken, IEmbedData } from './interface';
 import { getTokenBalance, parseContractError, registerSendTxEvents } from './utils/index';
 import { EventId, setDataFromSCConfig, getImageIpfsUrl, setDefaultChainId, getChainId, initRpcWallet, getRpcWallet, isRpcWalletConnected, isClientWalletConnected } from './store/index';
-import { ChainNativeTokenByChainId, DefaultERC20Tokens, ITokenObject } from '@scom/scom-token-list';
-import { buttonStyle, dappContainerStyle } from './index.css';
+import { ChainNativeTokenByChainId, DefaultERC20Tokens, ITokenObject, tokenStore } from '@scom/scom-token-list';
+import { buttonStyle, dappContainerStyle, tokenInputStyle } from './index.css';
 import { Alert } from './alert/index';
 import { sendToken } from './API';
 import configData from './data.json';
@@ -359,11 +359,14 @@ export default class ScomTipMe extends Module {
     if (!this.tokenInput.isConnected) await this.tokenInput.ready();
     const chainId = getChainId();
     const rpcWallet = getRpcWallet();
-    const { instanceId } = rpcWallet;
+    const { instanceId, address } = rpcWallet;
+    tokenStore.updateTokenMapData(chainId);
+    if (address) {
+      await tokenStore.updateAllTokenBalances(rpcWallet);
+    }
     if (instanceId && instanceId !== this.tokenInput.rpcWalletId) {
       this.tokenInput.rpcWalletId = instanceId;
     }
-    this.tokenInput.targetChainId = chainId;
     try {
       await Wallet.getClientInstance().init();
     } catch { }
@@ -381,7 +384,7 @@ export default class ScomTipMe extends Module {
   }
 
   private updateTokenInput = async () => {
-    this.tokenBalance = this.tokenObj?.chainId === getChainId() ?  await getTokenBalance(this.tokenObj) : new BigNumber(0);
+    this.tokenBalance = this.tokenObj?.chainId === getChainId() ? new BigNumber(tokenStore.getTokenBalance(this.tokenObj)) : new BigNumber(0);
     this.updateBtn();
   }
 
@@ -517,10 +520,10 @@ export default class ScomTipMe extends Module {
             <i-label id="lbDescription" font={{ bold: true, size: '24px' }} class="text-center" />
             <i-scom-token-input
               id="tokenInput"
-              withoutConnected={true}
+              class={tokenInputStyle}
               onInputAmountChanged={this.onInputAmountChanged}
               onSetMaxBalance={this.onSetMaxBalance}
-              onSelectToken={(token: any) => this.onSelectToken(token)}
+              onSelectToken={(token: ITokenObject) => this.onSelectToken(token)}
             />
             <i-button
               id="btnSend"

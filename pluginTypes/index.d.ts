@@ -130,6 +130,7 @@ declare module "@scom/scom-tip-me/utils/index.ts" {
 declare module "@scom/scom-tip-me/index.css.ts" {
     export const dappContainerStyle: string;
     export const buttonStyle: string;
+    export const tokenInputStyle: string;
 }
 /// <amd-module name="@scom/scom-tip-me/alert/index.tsx" />
 declare module "@scom/scom-tip-me/alert/index.tsx" {

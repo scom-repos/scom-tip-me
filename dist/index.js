@@ -344,7 +344,7 @@ define("@scom/scom-tip-me/utils/index.ts", ["require", "exports", "@ijstech/eth-
 define("@scom/scom-tip-me/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.buttonStyle = exports.dappContainerStyle = void 0;
+    exports.tokenInputStyle = exports.buttonStyle = exports.dappContainerStyle = void 0;
     const Theme = components_2.Styles.Theme.ThemeVars;
     exports.dappContainerStyle = components_2.Styles.style({
         $nest: {
@@ -363,6 +363,17 @@ define("@scom/scom-tip-me/index.css.ts", ["require", "exports", "@ijstech/compon
             },
             'i-icon svg': {
                 fill: Theme.colors.primary.contrastText
+            }
+        }
+    });
+    exports.tokenInputStyle = components_2.Styles.style({
+        $nest: {
+            '#gridTokenInput': {
+                borderRadius: 16,
+                paddingBlock: '8px !important'
+            },
+            '#btnToken': {
+                minWidth: 120
             }
         }
     });
@@ -13570,11 +13581,14 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                     await this.tokenInput.ready();
                 const chainId = (0, index_6.getChainId)();
                 const rpcWallet = (0, index_6.getRpcWallet)();
-                const { instanceId } = rpcWallet;
+                const { instanceId, address } = rpcWallet;
+                scom_token_list_1.tokenStore.updateTokenMapData(chainId);
+                if (address) {
+                    await scom_token_list_1.tokenStore.updateAllTokenBalances(rpcWallet);
+                }
                 if (instanceId && instanceId !== this.tokenInput.rpcWalletId) {
                     this.tokenInput.rpcWalletId = instanceId;
                 }
-                this.tokenInput.targetChainId = chainId;
                 try {
                     await eth_wallet_6.Wallet.getClientInstance().init();
                 }
@@ -13592,7 +13606,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
             };
             this.updateTokenInput = async () => {
                 var _a;
-                this.tokenBalance = ((_a = this.tokenObj) === null || _a === void 0 ? void 0 : _a.chainId) === (0, index_6.getChainId)() ? await (0, index_5.getTokenBalance)(this.tokenObj) : new eth_wallet_6.BigNumber(0);
+                this.tokenBalance = ((_a = this.tokenObj) === null || _a === void 0 ? void 0 : _a.chainId) === (0, index_6.getChainId)() ? new eth_wallet_6.BigNumber(scom_token_list_1.tokenStore.getTokenBalance(this.tokenObj)) : new eth_wallet_6.BigNumber(0);
                 this.updateBtn();
             };
             this.updateBtn = async () => {
@@ -13986,7 +14000,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                     this.$render("i-vstack", { gap: 10, verticalAlignment: "center", horizontalAlignment: "center" },
                         this.$render("i-image", { id: "imgLogo", width: 100, height: 100 }),
                         this.$render("i-label", { id: "lbDescription", font: { bold: true, size: '24px' }, class: "text-center" }),
-                        this.$render("i-scom-token-input", { id: "tokenInput", withoutConnected: true, onInputAmountChanged: this.onInputAmountChanged, onSetMaxBalance: this.onSetMaxBalance, onSelectToken: (token) => this.onSelectToken(token) }),
+                        this.$render("i-scom-token-input", { id: "tokenInput", class: index_css_1.tokenInputStyle, onInputAmountChanged: this.onInputAmountChanged, onSetMaxBalance: this.onSetMaxBalance, onSelectToken: (token) => this.onSelectToken(token) }),
                         this.$render("i-button", { id: "btnSend", caption: "Send", class: index_css_1.buttonStyle, width: 200, maxWidth: "100%", padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, font: { size: '1rem', color: Theme.colors.primary.contrastText }, rightIcon: { visible: false, spin: true, fill: Theme.colors.primary.contrastText }, onClick: this.sendToken })),
                     this.$render("i-scom-tip-me-alert", { id: "mdAlert" }),
                     this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));
