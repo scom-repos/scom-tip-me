@@ -7,12 +7,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 define("@scom/scom-tip-me/interface.tsx", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    ;
 });
 define("@scom/scom-tip-me/store/index.ts", ["require", "exports", "@ijstech/eth-wallet", "@ijstech/components"], function (require, exports, eth_wallet_1, components_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getClientWallet = exports.getRpcWallet = exports.initRpcWallet = exports.getChainId = exports.isRpcWalletConnected = exports.isClientWalletConnected = exports.getImageIpfsUrl = exports.getDefaultChainId = exports.setDefaultChainId = exports.getIPFSGatewayUrl = exports.setIPFSGatewayUrl = exports.setDataFromSCConfig = exports.state = exports.getSupportedNetworks = exports.getNetworkInfo = exports.WalletPlugin = void 0;
+    exports.getClientWallet = exports.getRpcWallet = exports.initRpcWallet = exports.getChainId = exports.isRpcWalletConnected = exports.isClientWalletConnected = exports.getImageIpfsUrl = exports.getIPFSGatewayUrl = exports.setIPFSGatewayUrl = exports.setDataFromSCConfig = exports.state = exports.getSupportedNetworks = exports.getNetworkInfo = exports.WalletPlugin = void 0;
     var WalletPlugin;
     (function (WalletPlugin) {
         WalletPlugin["MetaMask"] = "metamask";
@@ -27,7 +26,6 @@ define("@scom/scom-tip-me/store/index.ts", ["require", "exports", "@ijstech/eth-
     };
     exports.getSupportedNetworks = getSupportedNetworks;
     exports.state = {
-        defaultChainId: 1,
         networkMap: {},
         ipfsGatewayUrl: 'https://ipfs.scom.dev/ipfs/',
         rpcWalletId: ''
@@ -46,14 +44,6 @@ define("@scom/scom-tip-me/store/index.ts", ["require", "exports", "@ijstech/eth-
         return exports.state.ipfsGatewayUrl;
     };
     exports.getIPFSGatewayUrl = getIPFSGatewayUrl;
-    const setDefaultChainId = (chainId) => {
-        exports.state.defaultChainId = chainId;
-    };
-    exports.setDefaultChainId = setDefaultChainId;
-    const getDefaultChainId = () => {
-        return exports.state.defaultChainId;
-    };
-    exports.getDefaultChainId = getDefaultChainId;
     const getImageIpfsUrl = (url) => {
         if (url && url.startsWith("ipfs://"))
             return `${(0, exports.getIPFSGatewayUrl)()}${url.substring(7)}`;
@@ -144,202 +134,12 @@ define("@scom/scom-tip-me/utils/token.ts", ["require", "exports", "@ijstech/eth-
     };
     exports.registerSendTxEvents = registerSendTxEvents;
 });
-define("@scom/scom-tip-me/utils/approvalModel.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/scom-tip-me/utils/token.ts"], function (require, exports, eth_wallet_3, token_1) {
+define("@scom/scom-tip-me/utils/index.ts", ["require", "exports", "@scom/scom-tip-me/utils/token.ts"], function (require, exports, token_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getERC20ApprovalModelAction = exports.getERC20Allowance = exports.ApprovalStatus = void 0;
-    class ERC20ApprovalModel {
-        constructor(options) {
-            this.options = {
-                sender: null,
-                spenderAddress: '',
-                payAction: async () => { },
-                onToBeApproved: async (token) => { },
-                onToBePaid: async (token) => { },
-                onApproving: async (token, receipt, data) => { },
-                onApproved: async (token, data) => { },
-                onPaying: async (receipt, data) => { },
-                onPaid: async (data) => { },
-                onApprovingError: async (token, err) => { },
-                onPayingError: async (err) => { }
-            };
-            this.setSpenderAddress = (value) => {
-                this.options.spenderAddress = value;
-            };
-            this.checkAllowance = async (token, inputAmount) => {
-                let allowance = await (0, exports.getERC20Allowance)(token, this.options.spenderAddress);
-                if (!allowance) {
-                    await this.options.onToBePaid.bind(this.options.sender)(token);
-                }
-                else if (new eth_wallet_3.BigNumber(inputAmount).gt(allowance)) {
-                    await this.options.onToBeApproved.bind(this.options.sender)(token);
-                }
-                else {
-                    await this.options.onToBePaid.bind(this.options.sender)(token);
-                }
-            };
-            this.doApproveAction = async (token, inputAmount, data) => {
-                const txHashCallback = async (err, receipt) => {
-                    if (err) {
-                        await this.options.onApprovingError.bind(this.options.sender)(token, err);
-                    }
-                    else {
-                        await this.options.onApproving.bind(this.options.sender)(token, receipt, data);
-                    }
-                };
-                const confirmationCallback = async (receipt) => {
-                    await this.options.onApproved.bind(this.options.sender)(token, data);
-                    await this.checkAllowance(token, inputAmount);
-                };
-                approveERC20Max(token, this.options.spenderAddress, txHashCallback, confirmationCallback);
-            };
-            this.doPayAction = async (data) => {
-                const txHashCallback = async (err, receipt) => {
-                    if (err) {
-                        await this.options.onPayingError.bind(this.options.sender)(err);
-                    }
-                    else {
-                        await this.options.onPaying.bind(this.options.sender)(receipt, data);
-                    }
-                };
-                const confirmationCallback = async (receipt) => {
-                    await this.options.onPaid.bind(this.options.sender)(data);
-                };
-                (0, token_1.registerSendTxEvents)({
-                    transactionHash: txHashCallback,
-                    confirmation: confirmationCallback
-                });
-                await this.options.payAction.bind(this.options.sender)();
-            };
-            this.getAction = () => {
-                return {
-                    setSpenderAddress: this.setSpenderAddress,
-                    doApproveAction: this.doApproveAction,
-                    doPayAction: this.doPayAction,
-                    checkAllowance: this.checkAllowance
-                };
-            };
-            this.options = options;
-        }
-    }
-    var ApprovalStatus;
-    (function (ApprovalStatus) {
-        ApprovalStatus[ApprovalStatus["TO_BE_APPROVED"] = 0] = "TO_BE_APPROVED";
-        ApprovalStatus[ApprovalStatus["APPROVING"] = 1] = "APPROVING";
-        ApprovalStatus[ApprovalStatus["NONE"] = 2] = "NONE";
-    })(ApprovalStatus = exports.ApprovalStatus || (exports.ApprovalStatus = {}));
-    const approveERC20Max = async (token, spenderAddress, callback, confirmationCallback) => {
-        let wallet = eth_wallet_3.Wallet.getInstance();
-        let amount = new eth_wallet_3.BigNumber(2).pow(256).minus(1);
-        let erc20 = new eth_wallet_3.Contracts.ERC20(wallet, token.address);
-        (0, token_1.registerSendTxEvents)({
-            transactionHash: callback,
-            confirmation: confirmationCallback
-        });
-        let receipt = await erc20.approve({
-            spender: spenderAddress,
-            amount
-        });
-        return receipt;
-    };
-    const getERC20Allowance = async (token, spenderAddress) => {
-        if (!token.address)
-            return null;
-        let wallet = eth_wallet_3.Wallet.getInstance();
-        let erc20 = new eth_wallet_3.Contracts.ERC20(wallet, token.address);
-        let allowance = await erc20.allowance({
-            owner: wallet.address,
-            spender: spenderAddress
-        });
-        return allowance;
-    };
-    exports.getERC20Allowance = getERC20Allowance;
-    const getERC20ApprovalModelAction = (spenderAddress, options) => {
-        const approvalOptions = Object.assign(Object.assign({}, options), { spenderAddress });
-        const approvalModel = new ERC20ApprovalModel(approvalOptions);
-        const approvalModelAction = approvalModel.getAction();
-        return approvalModelAction;
-    };
-    exports.getERC20ApprovalModelAction = getERC20ApprovalModelAction;
-});
-define("@scom/scom-tip-me/utils/index.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/scom-tip-me/utils/token.ts", "@scom/scom-tip-me/utils/approvalModel.ts"], function (require, exports, eth_wallet_4, token_2, approvalModel_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getERC20ApprovalModelAction = exports.getERC20Allowance = exports.ApprovalStatus = exports.registerSendTxEvents = exports.getTokenBalance = exports.getERC20Amount = exports.parseContractError = exports.formatNumberWithSeparators = exports.formatNumber = void 0;
-    const formatNumber = (value, decimals) => {
-        let val = value;
-        const minValue = '0.0000001';
-        if (typeof value === 'string') {
-            val = new eth_wallet_4.BigNumber(value).toNumber();
-        }
-        else if (typeof value === 'object') {
-            val = value.toNumber();
-        }
-        if (val != 0 && new eth_wallet_4.BigNumber(val).lt(minValue)) {
-            return `<${minValue}`;
-        }
-        return (0, exports.formatNumberWithSeparators)(val, decimals || 4);
-    };
-    exports.formatNumber = formatNumber;
-    const formatNumberWithSeparators = (value, precision) => {
-        if (!value)
-            value = 0;
-        if (precision) {
-            let outputStr = '';
-            if (value >= 1) {
-                const unit = Math.pow(10, precision);
-                const rounded = Math.floor(value * unit) / unit;
-                outputStr = rounded.toLocaleString('en-US', { maximumFractionDigits: precision });
-            }
-            else {
-                outputStr = value.toLocaleString('en-US', { maximumSignificantDigits: precision });
-            }
-            if (outputStr.length > 18) {
-                outputStr = outputStr.substr(0, 18) + '...';
-            }
-            return outputStr;
-        }
-        else {
-            return value.toLocaleString('en-US');
-        }
-    };
-    exports.formatNumberWithSeparators = formatNumberWithSeparators;
-    function parseContractError(oMessage) {
-        var _a;
-        if (typeof oMessage === 'string')
-            return oMessage;
-        let message = '';
-        if (oMessage.message && oMessage.message.includes('Internal JSON-RPC error.'))
-            message = JSON.parse(oMessage.message.replace('Internal JSON-RPC error.\n', '')).message;
-        else if (oMessage.message)
-            message = oMessage.message;
-        const staticMessageMap = {
-            'execution reverted: OAXDEX: K': 'x * y = k Violated',
-            'execution reverted: OAXDEX: FORBIDDEN': 'Forbidden',
-            'execution reverted: OAXDEX: INSUFFICIENT_INPUT_AMOUNT': 'Insufficient input amount',
-            'execution reverted: OAXDEX: INVALID_TO': 'Invalid to',
-            'execution reverted: OAXDEX: INSUFFICIENT_OUTPUT_AMOUNT': 'Insufficient output amount',
-            'execution reverted: OAXDEX: PAIR PAUSED': 'Pair paused',
-            'execution reverted: OAXDEX: GLOBALLY PAUSED': 'Globally paused',
-            'execution reverted: OAXDEX: OVERFLOW': 'Overflow',
-            'execution reverted: OAXDEX_Pair: INSUFFICIENT_OUTPUT_AMOUNT': 'Insufficient output amount',
-            'execution reverted: OAXDEX_Pair: INSUFFICIENT_INPUT_AMOUNT': 'Insufficient input amount',
-            'execution reverted: OAXDEX: INVALID_SIGNATURE': 'Invalid signature',
-            'execution reverted: OAXDEX: EXPIRED': 'Expired',
-            'MetaMask Tx Signature: User denied transaction signature.': 'User denied transaction signature',
-            'execution reverted: OracleAdaptor: Price outside allowed range': 'Circuit Breaker: Exceeds Price Protection Range',
-            'execution reverted: No oracle found': 'No Oracle found',
-            'execution reverted: Amount exceeds available fund': 'Insufficient liquidity',
-        };
-        return (_a = staticMessageMap[message]) !== null && _a !== void 0 ? _a : `Unknown Error: ${message}`;
-    }
-    exports.parseContractError = parseContractError;
-    Object.defineProperty(exports, "getERC20Amount", { enumerable: true, get: function () { return token_2.getERC20Amount; } });
-    Object.defineProperty(exports, "getTokenBalance", { enumerable: true, get: function () { return token_2.getTokenBalance; } });
-    Object.defineProperty(exports, "registerSendTxEvents", { enumerable: true, get: function () { return token_2.registerSendTxEvents; } });
-    Object.defineProperty(exports, "ApprovalStatus", { enumerable: true, get: function () { return approvalModel_1.ApprovalStatus; } });
-    Object.defineProperty(exports, "getERC20Allowance", { enumerable: true, get: function () { return approvalModel_1.getERC20Allowance; } });
-    Object.defineProperty(exports, "getERC20ApprovalModelAction", { enumerable: true, get: function () { return approvalModel_1.getERC20ApprovalModelAction; } });
+    exports.registerSendTxEvents = exports.getTokenBalance = void 0;
+    Object.defineProperty(exports, "getTokenBalance", { enumerable: true, get: function () { return token_1.getTokenBalance; } });
+    Object.defineProperty(exports, "registerSendTxEvents", { enumerable: true, get: function () { return token_1.registerSendTxEvents; } });
 });
 define("@scom/scom-tip-me/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_2) {
     "use strict";
@@ -377,76 +177,6 @@ define("@scom/scom-tip-me/index.css.ts", ["require", "exports", "@ijstech/compon
             }
         }
     });
-});
-define("@scom/scom-tip-me/alert/index.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_3) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Alert = void 0;
-    const Theme = components_3.Styles.Theme.ThemeVars;
-    ;
-    let Alert = class Alert extends components_3.Module {
-        get message() {
-            return this._message;
-        }
-        set message(value) {
-            this._message = value;
-            this.mdAlert.onClose = this._message.onClose;
-        }
-        get iconName() {
-            if (this.message.status === 'error')
-                return 'times';
-            else if (this.message.status === 'warning')
-                return 'exclamation';
-            else if (this.message.status === 'success')
-                return 'check';
-            else
-                return 'spinner';
-        }
-        get color() {
-            if (this.message.status === 'error')
-                return Theme.colors.error.main;
-            else if (this.message.status === 'warning')
-                return Theme.colors.warning.main;
-            else if (this.message.status === 'success')
-                return Theme.colors.success.main;
-            else
-                return Theme.colors.primary.main;
-        }
-        closeModal() {
-            this.mdAlert.visible = false;
-        }
-        showModal() {
-            this.renderUI();
-            this.mdAlert.visible = true;
-        }
-        renderUI() {
-            this.pnlMain.clearInnerHTML();
-            const content = this.renderContent();
-            const border = this.message.status === 'loading' ? {} : { border: { width: 2, style: 'solid', color: this.color, radius: '50%' } };
-            this.pnlMain.appendChild(this.$render("i-vstack", { horizontalAlignment: "center", gap: "1.75rem" },
-                this.$render("i-icon", Object.assign({ width: 55, height: 55, name: this.iconName, fill: this.color, padding: { top: "0.6rem", bottom: "0.6rem", left: "0.6rem", right: "0.6rem" }, spin: this.message.status === 'loading' }, border)),
-                content,
-                this.$render("i-button", { padding: { top: "0.5rem", bottom: "0.5rem", left: "2rem", right: "2rem" }, caption: "Close", font: { color: Theme.colors.primary.contrastText }, onClick: this.closeModal.bind(this) })));
-        }
-        renderContent() {
-            if (!this.message.title && !this.message.content)
-                return [];
-            const lblTitle = this.message.title ? this.$render("i-label", { caption: this.message.title, font: { size: '1.25rem', bold: true } }) : [];
-            const lblContent = this.message.content ? this.$render("i-label", { caption: this.message.content, overflowWrap: "anywhere" }) : [];
-            return (this.$render("i-vstack", { class: "text-center", horizontalAlignment: "center", gap: "0.75rem", lineHeight: 1.5 },
-                lblTitle,
-                lblContent));
-        }
-        render() {
-            return (this.$render("i-modal", { id: "mdAlert", maxWidth: "400px", maxHeight: "300px" },
-                this.$render("i-panel", { id: "pnlMain", width: "100%", padding: { top: "1rem", bottom: "1.5rem", left: "1rem", right: "1rem" } })));
-        }
-    };
-    Alert = __decorate([
-        (0, components_3.customElements)('i-scom-tip-me-alert')
-    ], Alert);
-    exports.Alert = Alert;
-    ;
 });
 define("@scom/scom-tip-me/contracts/oswap-openswap-contract/contracts/OpenSwap.json.ts", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -13381,15 +13111,15 @@ define("@scom/scom-tip-me/contracts/oswap-openswap-contract/index.ts", ["require
     Object.defineProperty(exports, "toDeploymentContracts", { enumerable: true, get: function () { return deploy_1.toDeploymentContracts; } });
     Object.defineProperty(exports, "OpenSwap", { enumerable: true, get: function () { return OpenSwap_3.OpenSwap; } });
 });
-define("@scom/scom-tip-me/API.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/scom-tip-me/contracts/oswap-openswap-contract/index.ts"], function (require, exports, eth_wallet_5, index_4) {
+define("@scom/scom-tip-me/API.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/scom-tip-me/contracts/oswap-openswap-contract/index.ts"], function (require, exports, eth_wallet_3, index_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.sendToken = void 0;
     const sendToken = async (token, recipient, amount, callback, confirmationCallBack) => {
-        const wallet = eth_wallet_5.Wallet.getInstance();
+        const wallet = eth_wallet_3.Wallet.getInstance();
         try {
             if (token.address) {
-                const value = eth_wallet_5.Utils.toDecimals(amount, token.decimals);
+                const value = eth_wallet_3.Utils.toDecimals(amount, token.decimals);
                 const contract = new index_4.Contracts.OSWAP_ERC20(wallet, token.address);
                 await contract.transfer({ to: recipient, value });
             }
@@ -13545,11 +13275,11 @@ define("@scom/scom-tip-me/formSchema.json.ts", ["require", "exports"], function 
         }
     };
 });
-define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-tip-me/utils/index.ts", "@scom/scom-tip-me/store/index.ts", "@scom/scom-token-list", "@scom/scom-tip-me/index.css.ts", "@scom/scom-tip-me/API.ts", "@scom/scom-tip-me/data.json.ts", "@scom/scom-tip-me/formSchema.json.ts"], function (require, exports, components_4, eth_wallet_6, index_5, index_6, scom_token_list_1, index_css_1, API_1, data_json_1, formSchema_json_1) {
+define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-tip-me/utils/index.ts", "@scom/scom-tip-me/store/index.ts", "@scom/scom-token-list", "@scom/scom-tip-me/index.css.ts", "@scom/scom-tip-me/API.ts", "@scom/scom-tip-me/data.json.ts", "@scom/scom-tip-me/formSchema.json.ts"], function (require, exports, components_3, eth_wallet_4, index_5, index_6, scom_token_list_1, index_css_1, API_1, data_json_1, formSchema_json_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_4.Styles.Theme.ThemeVars;
-    let ScomTipMe = class ScomTipMe extends components_4.Module {
+    const Theme = components_3.Styles.Theme.ThemeVars;
+    let ScomTipMe = class ScomTipMe extends components_3.Module {
         constructor(parent, options) {
             super(parent, options);
             this._data = {
@@ -13557,7 +13287,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                 networks: [],
                 defaultChainId: 0
             };
-            this.tokenBalance = new eth_wallet_6.BigNumber(0);
+            this.tokenBalance = new eth_wallet_4.BigNumber(0);
             this.tag = {};
             this.defaultEdit = true;
             this.rpcWalletEvents = [];
@@ -13590,7 +13320,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                     this.tokenInput.rpcWalletId = instanceId;
                 }
                 try {
-                    await eth_wallet_6.Wallet.getClientInstance().init();
+                    await eth_wallet_4.Wallet.getClientInstance().init();
                 }
                 catch (_a) { }
                 this.updateTokenObject();
@@ -13606,7 +13336,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
             };
             this.updateTokenInput = async () => {
                 var _a;
-                this.tokenBalance = ((_a = this.tokenObj) === null || _a === void 0 ? void 0 : _a.chainId) === (0, index_6.getChainId)() ? new eth_wallet_6.BigNumber(scom_token_list_1.tokenStore.getTokenBalance(this.tokenObj)) : new eth_wallet_6.BigNumber(0);
+                this.tokenBalance = ((_a = this.tokenObj) === null || _a === void 0 ? void 0 : _a.chainId) === (0, index_6.getChainId)() ? new eth_wallet_4.BigNumber(scom_token_list_1.tokenStore.getTokenBalance(this.tokenObj)) : new eth_wallet_4.BigNumber(0);
                 this.updateBtn();
             };
             this.updateBtn = async () => {
@@ -13646,7 +13376,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
             this.sendToken = async () => {
                 if (!(0, index_6.isClientWalletConnected)()) {
                     if (this.mdWallet) {
-                        await components_4.application.loadPackage('@scom/scom-wallet-modal', '*');
+                        await components_3.application.loadPackage('@scom/scom-wallet-modal', '*');
                         this.mdWallet.networks = this.networks;
                         this.mdWallet.wallets = this.wallets;
                         this.mdWallet.showModal();
@@ -13655,40 +13385,40 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                 }
                 if (!(0, index_6.isRpcWalletConnected)()) {
                     const chainId = (0, index_6.getChainId)();
-                    const clientWallet = eth_wallet_6.Wallet.getClientInstance();
+                    const clientWallet = eth_wallet_4.Wallet.getClientInstance();
                     await clientWallet.switchNetwork(chainId);
                     return;
                 }
                 if (!this.tokenObj || !this._data.recipient)
                     return;
-                this.mdAlert.message = {
+                this.txStatusModal.message = {
                     status: 'warning',
                     content: 'Sending...'
                 };
-                this.mdAlert.showModal();
+                this.txStatusModal.showModal();
                 const callBack = (error, receipt) => {
                     if (error) {
-                        this.mdAlert.message = {
+                        this.txStatusModal.message = {
                             status: 'error',
-                            content: (0, index_5.parseContractError)(error)
+                            content: error
                         };
                     }
                     else {
-                        this.mdAlert.message = {
+                        this.txStatusModal.message = {
                             status: 'success',
                             content: receipt
                         };
-                        this.tokenInput.readonly = true;
+                        this.tokenInput.readOnly = true;
                         this.btnSend.enabled = false;
                         this.btnSend.caption = 'Sending';
                         this.btnSend.rightIcon.visible = true;
                     }
-                    this.mdAlert.showModal();
+                    this.txStatusModal.showModal();
                 };
                 const confirmationCallBack = async () => {
                     this.updateTokenInput();
                     this.$eventBus.dispatch("Paid" /* EventId.Paid */);
-                    this.tokenInput.readonly = false;
+                    this.tokenInput.readOnly = false;
                     this.btnSend.rightIcon.visible = false;
                 };
                 (0, index_5.registerSendTxEvents)({
@@ -13699,7 +13429,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
             };
             if (data_json_1.default)
                 (0, index_6.setDataFromSCConfig)(data_json_1.default);
-            this.$eventBus = components_4.application.EventBus;
+            this.$eventBus = components_3.application.EventBus;
             this.registerEvent();
         }
         onHide() {
@@ -13912,7 +13642,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
             this._data = data;
             const rpcWalletId = (0, index_6.initRpcWallet)(this.defaultChainId);
             const rpcWallet = (0, index_6.getRpcWallet)();
-            const event = rpcWallet.registerWalletEvent(this, eth_wallet_6.Constants.RpcWalletEvent.Connected, async (connected) => {
+            const event = rpcWallet.registerWalletEvent(this, eth_wallet_4.Constants.RpcWalletEvent.Connected, async (connected) => {
                 await this.refreshTokenInfo();
             });
             this.rpcWalletEvents.push(event);
@@ -13979,7 +13709,6 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                 const wallets = this.getAttribute('wallets', true, []);
                 const showHeader = this.getAttribute('showHeader', true);
                 const defaultChainId = this.getAttribute('defaultChainId', true);
-                (0, index_6.setDefaultChainId)(defaultChainId);
                 await this.setData({
                     logo,
                     description,
@@ -14002,12 +13731,12 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                         this.$render("i-label", { id: "lbDescription", font: { bold: true, size: '24px' }, class: "text-center" }),
                         this.$render("i-scom-token-input", { id: "tokenInput", class: index_css_1.tokenInputStyle, onInputAmountChanged: this.onInputAmountChanged, onSetMaxBalance: this.onSetMaxBalance, onSelectToken: (token) => this.onSelectToken(token) }),
                         this.$render("i-button", { id: "btnSend", caption: "Send", class: index_css_1.buttonStyle, width: 200, maxWidth: "100%", padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, font: { size: '1rem', color: Theme.colors.primary.contrastText }, rightIcon: { visible: false, spin: true, fill: Theme.colors.primary.contrastText }, onClick: this.sendToken })),
-                    this.$render("i-scom-tip-me-alert", { id: "mdAlert" }),
+                    this.$render("i-scom-tx-status-modal", { id: "txStatusModal" }),
                     this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));
         }
     };
     ScomTipMe = __decorate([
-        (0, components_4.customElements)('i-scom-tip-me')
+        (0, components_3.customElements)('i-scom-tip-me')
     ], ScomTipMe);
     exports.default = ScomTipMe;
 });

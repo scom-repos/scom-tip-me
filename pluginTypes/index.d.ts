@@ -4,7 +4,6 @@
 /// <reference path="@scom/scom-token-input/@scom/scom-token-modal/@ijstech/eth-wallet/index.d.ts" />
 /// <amd-module name="@scom/scom-tip-me/interface.tsx" />
 declare module "@scom/scom-tip-me/interface.tsx" {
-    import { INetwork } from "@ijstech/eth-wallet";
     import { INetworkConfig } from "@scom/scom-network-picker";
     import { ITokenObject } from "@scom/scom-token-list";
     import { IWalletPlugin } from "@scom/scom-wallet-modal";
@@ -29,24 +28,11 @@ declare module "@scom/scom-tip-me/interface.tsx" {
         networks: INetworkConfig[];
         showHeader?: boolean;
     }
-    export interface IExtendedNetwork extends INetwork {
-        shortName?: string;
-        isDisabled?: boolean;
-        isMainChain?: boolean;
-        isCrossChainSupported?: boolean;
-        explorerName?: string;
-        explorerTxUrl?: string;
-        explorerAddressUrl?: string;
-        isTestnet?: boolean;
-    }
 }
 /// <amd-module name="@scom/scom-tip-me/store/index.ts" />
 declare module "@scom/scom-tip-me/store/index.ts" {
-    import { IExtendedNetwork } from "@scom/scom-tip-me/interface.tsx";
+    import { INetwork } from "@ijstech/eth-wallet";
     export const enum EventId {
-        ConnectWallet = "connectWallet",
-        IsWalletConnected = "isWalletConnected",
-        IsWalletDisconnected = "IsWalletDisconnected",
         chainChanged = "chainChanged",
         Paid = "Paid"
     }
@@ -54,12 +40,11 @@ declare module "@scom/scom-tip-me/store/index.ts" {
         MetaMask = "metamask",
         WalletConnect = "walletconnect"
     }
-    export const getNetworkInfo: (chainId: number) => IExtendedNetwork;
-    export const getSupportedNetworks: () => IExtendedNetwork[];
+    export const getNetworkInfo: (chainId: number) => INetwork;
+    export const getSupportedNetworks: () => INetwork[];
     export const state: {
-        defaultChainId: number;
         networkMap: {
-            [key: number]: IExtendedNetwork;
+            [key: number]: INetwork;
         };
         ipfsGatewayUrl: string;
         rpcWalletId: string;
@@ -67,8 +52,6 @@ declare module "@scom/scom-tip-me/store/index.ts" {
     export const setDataFromSCConfig: (options: any) => void;
     export const setIPFSGatewayUrl: (url: string) => void;
     export const getIPFSGatewayUrl: () => string;
-    export const setDefaultChainId: (chainId: number) => void;
-    export const getDefaultChainId: () => number;
     export const getImageIpfsUrl: (url: string) => string;
     export function isClientWalletConnected(): boolean;
     export function isRpcWalletConnected(): boolean;
@@ -85,83 +68,15 @@ declare module "@scom/scom-tip-me/utils/token.ts" {
     export const getTokenBalance: (token: ITokenObject) => Promise<BigNumber>;
     export const registerSendTxEvents: (sendTxEventHandlers: ISendTxEventsOptions) => void;
 }
-/// <amd-module name="@scom/scom-tip-me/utils/approvalModel.ts" />
-declare module "@scom/scom-tip-me/utils/approvalModel.ts" {
-    import { BigNumber } from "@ijstech/eth-wallet";
-    import { ITokenObject } from "@scom/scom-token-list";
-    export enum ApprovalStatus {
-        TO_BE_APPROVED = 0,
-        APPROVING = 1,
-        NONE = 2
-    }
-    export const getERC20Allowance: (token: ITokenObject, spenderAddress: string) => Promise<BigNumber>;
-    export const getERC20ApprovalModelAction: (spenderAddress: string, options: IERC20ApprovalEventOptions) => IERC20ApprovalAction;
-    interface IERC20ApprovalEventOptions {
-        sender: any;
-        payAction: () => Promise<void>;
-        onToBeApproved: (token: ITokenObject) => Promise<void>;
-        onToBePaid: (token: ITokenObject) => Promise<void>;
-        onApproving: (token: ITokenObject, receipt?: string, data?: any) => Promise<void>;
-        onApproved: (token: ITokenObject, data?: any) => Promise<void>;
-        onPaying: (receipt?: string, data?: any) => Promise<void>;
-        onPaid: (data?: any) => Promise<void>;
-        onApprovingError: (token: ITokenObject, err: Error) => Promise<void>;
-        onPayingError: (err: Error) => Promise<void>;
-    }
-    export interface IERC20ApprovalOptions extends IERC20ApprovalEventOptions {
-        spenderAddress: string;
-    }
-    export interface IERC20ApprovalAction {
-        setSpenderAddress: (value: string) => void;
-        doApproveAction: (token: ITokenObject, inputAmount: string, data?: any) => Promise<void>;
-        doPayAction: (data?: any) => Promise<void>;
-        checkAllowance: (token: ITokenObject, inputAmount: string) => Promise<void>;
-    }
-}
 /// <amd-module name="@scom/scom-tip-me/utils/index.ts" />
 declare module "@scom/scom-tip-me/utils/index.ts" {
-    export const formatNumber: (value: any, decimals?: number) => string;
-    export const formatNumberWithSeparators: (value: number, precision?: number) => string;
-    export function parseContractError(oMessage: any): string;
-    export { getERC20Amount, getTokenBalance, registerSendTxEvents } from "@scom/scom-tip-me/utils/token.ts";
-    export { ApprovalStatus, getERC20Allowance, getERC20ApprovalModelAction, IERC20ApprovalOptions, IERC20ApprovalAction } from "@scom/scom-tip-me/utils/approvalModel.ts";
+    export { getTokenBalance, registerSendTxEvents } from "@scom/scom-tip-me/utils/token.ts";
 }
 /// <amd-module name="@scom/scom-tip-me/index.css.ts" />
 declare module "@scom/scom-tip-me/index.css.ts" {
     export const dappContainerStyle: string;
     export const buttonStyle: string;
     export const tokenInputStyle: string;
-}
-/// <amd-module name="@scom/scom-tip-me/alert/index.tsx" />
-declare module "@scom/scom-tip-me/alert/index.tsx" {
-    import { Module, ControlElement } from '@ijstech/components';
-    global {
-        namespace JSX {
-            interface IntrinsicElements {
-                ['i-scom-tip-me-alert']: ControlElement;
-            }
-        }
-    }
-    export interface IAlertMessage {
-        status: 'warning' | 'success' | 'error' | 'loading';
-        title?: string;
-        content?: string;
-        onClose?: any;
-    }
-    export class Alert extends Module {
-        private mdAlert;
-        private pnlMain;
-        private _message;
-        get message(): IAlertMessage;
-        set message(value: IAlertMessage);
-        private get iconName();
-        private get color();
-        closeModal(): void;
-        showModal(): void;
-        private renderUI;
-        private renderContent;
-        render(): any;
-    }
 }
 /// <amd-module name="@scom/scom-tip-me/contracts/oswap-openswap-contract/contracts/OpenSwap.json.ts" />
 declare module "@scom/scom-tip-me/contracts/oswap-openswap-contract/contracts/OpenSwap.json.ts" {
@@ -9888,7 +9803,7 @@ declare module "@scom/scom-tip-me" {
         private lbDescription;
         private tokenInput;
         private btnSend;
-        private mdAlert;
+        private txStatusModal;
         private dappContainer;
         private mdWallet;
         private _data;

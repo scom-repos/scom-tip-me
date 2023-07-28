@@ -12,11 +12,10 @@ import {
 } from '@ijstech/components';
 import { BigNumber, Constants, IEventBusRegistry, Wallet } from '@ijstech/eth-wallet';
 import { ICustomToken, IEmbedData } from './interface';
-import { getTokenBalance, parseContractError, registerSendTxEvents } from './utils/index';
-import { EventId, setDataFromSCConfig, getImageIpfsUrl, setDefaultChainId, getChainId, initRpcWallet, getRpcWallet, isRpcWalletConnected, isClientWalletConnected } from './store/index';
+import { getTokenBalance, registerSendTxEvents } from './utils/index';
+import { EventId, setDataFromSCConfig, getImageIpfsUrl, getChainId, initRpcWallet, getRpcWallet, isRpcWalletConnected, isClientWalletConnected } from './store/index';
 import { ChainNativeTokenByChainId, DefaultERC20Tokens, ITokenObject, tokenStore } from '@scom/scom-token-list';
 import { buttonStyle, dappContainerStyle, tokenInputStyle } from './index.css';
-import { Alert } from './alert/index';
 import { sendToken } from './API';
 import configData from './data.json';
 import formSchema from './formSchema.json';
@@ -24,6 +23,7 @@ import { INetworkConfig } from '@scom/scom-network-picker';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import ScomTokenInput from '@scom/scom-token-input';
 import ScomWalletModal, { IWalletPlugin } from '@scom/scom-wallet-modal';
+import ScomTxStatusModal from '@scom/scom-tx-status-modal';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -56,7 +56,7 @@ export default class ScomTipMe extends Module {
   private lbDescription: Label;
   private tokenInput: ScomTokenInput;
   private btnSend: Button;
-  private mdAlert: Alert;
+  private txStatusModal: ScomTxStatusModal;
   private dappContainer: ScomDappContainer;
   private mdWallet: ScomWalletModal;
 
@@ -442,35 +442,35 @@ export default class ScomTipMe extends Module {
       return;
     }
     if (!this.tokenObj || !this._data.recipient) return;
-    this.mdAlert.message = {
+    this.txStatusModal.message = {
       status: 'warning',
       content: 'Sending...'
     }
-    this.mdAlert.showModal();
+    this.txStatusModal.showModal();
 
     const callBack = (error: Error, receipt?: string) => {
       if (error) {
-        this.mdAlert.message = {
+        this.txStatusModal.message = {
           status: 'error',
-          content: parseContractError(error)
+          content: error
         }
       } else {
-        this.mdAlert.message = {
+        this.txStatusModal.message = {
           status: 'success',
           content: receipt
         }
-        this.tokenInput.readonly = true;
+        this.tokenInput.readOnly = true;
         this.btnSend.enabled = false;
         this.btnSend.caption = 'Sending';
         this.btnSend.rightIcon.visible = true;
       }
-      this.mdAlert.showModal();
+      this.txStatusModal.showModal();
     }
 
     const confirmationCallBack = async () => {
       this.updateTokenInput();
       this.$eventBus.dispatch(EventId.Paid);
-      this.tokenInput.readonly = false;
+      this.tokenInput.readOnly = false;
       this.btnSend.rightIcon.visible = false;
     }
 
@@ -495,7 +495,6 @@ export default class ScomTipMe extends Module {
       const wallets = this.getAttribute('wallets', true, []);
       const showHeader = this.getAttribute('showHeader', true);
       const defaultChainId = this.getAttribute('defaultChainId', true);
-      setDefaultChainId(defaultChainId);
       await this.setData({
         logo,
         description,
@@ -537,7 +536,7 @@ export default class ScomTipMe extends Module {
               onClick={this.sendToken}
             />
           </i-vstack>
-          <i-scom-tip-me-alert id="mdAlert" />
+          <i-scom-tx-status-modal id="txStatusModal" />
           <i-scom-wallet-modal id="mdWallet" wallets={[]} />
         </i-panel>
       </i-scom-dapp-container>

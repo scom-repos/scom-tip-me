@@ -1,4 +1,3 @@
-import { INetwork } from "@ijstech/eth-wallet";
 import { INetworkConfig } from "@scom/scom-network-picker";
 import { ITokenObject } from "@scom/scom-token-list";
 import { IWalletPlugin } from "@scom/scom-wallet-modal";
@@ -26,14 +25,3 @@ export interface IEmbedData extends Partial<ITipMe> {
   networks: INetworkConfig[];
   showHeader?: boolean;
 }
-
-export interface IExtendedNetwork extends INetwork {
-  shortName?: string;
-  isDisabled?: boolean;
-  isMainChain?: boolean;
-  isCrossChainSupported?: boolean;
-  explorerName?: string;
-  explorerTxUrl?: string;
-  explorerAddressUrl?: string;
-  isTestnet?: boolean;
-};
