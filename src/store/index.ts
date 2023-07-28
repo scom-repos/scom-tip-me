@@ -1,11 +1,7 @@
 import { INetwork, Wallet } from "@ijstech/eth-wallet";
-import { IExtendedNetwork } from "../interface";
 import { application } from "@ijstech/components";
 
 export const enum EventId {
-  ConnectWallet = 'connectWallet',
-  IsWalletConnected = 'isWalletConnected',
-  IsWalletDisconnected = 'IsWalletDisconnected',
   chainChanged = 'chainChanged',
   Paid = 'Paid'
 }
@@ -24,8 +20,7 @@ export const getSupportedNetworks = () => {
 }
 
 export const state = {
-  defaultChainId: 1,
-  networkMap: {} as { [key: number]: IExtendedNetwork },
+  networkMap: {} as { [key: number]: INetwork },
   ipfsGatewayUrl: 'https://ipfs.scom.dev/ipfs/',
   rpcWalletId: ''
 }
@@ -42,14 +37,6 @@ export const setIPFSGatewayUrl = (url: string) => {
 
 export const getIPFSGatewayUrl = () => {
   return state.ipfsGatewayUrl;
-}
-
-export const setDefaultChainId = (chainId: number) => {
-  state.defaultChainId = chainId;
-}
-
-export const getDefaultChainId = () => {
-  return state.defaultChainId;
 }
 
 export const getImageIpfsUrl = (url: string) => {

@@ -16,8 +16,9 @@
     "@scom/scom-network-picker": "^0.1.1",
     "@scom/scom-network-list": "^0.1.1",
     "@scom/scom-wallet-modal": "^0.1.0",
-    "@scom/scom-token-input": "https://github.com/scom-repos/scom-token-input",
-    "@scom/scom-dapp-container": "^0.1.4"
+    "@scom/scom-token-input": "^0.1.0",
+    "@scom/scom-dapp-container": "^0.1.4",
+    "@scom/scom-tx-status-modal": "^0.1.0"
   },
   "devDependencies": {
     "@ijstech/cli": "^0.1.33",
@@ -26,7 +27,7 @@
   },
   "scripts": {
     "copy": "sh ./scripts/copy.sh",
-    "build": "rm -rf dist && npx @ijstech/compiler",
+    "build": "rm -rf dist && npx @ijstech/compiler && npm run copy",
     "serve": "npx @ijstech/cli serve 8080",
     "test": "cd test && npm run test && cd .."
   }
