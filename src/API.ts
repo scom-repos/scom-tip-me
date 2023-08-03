@@ -3,7 +3,7 @@ import { ITokenObject } from '@scom/scom-token-list';
 import { Contracts } from './contracts/oswap-openswap-contract/index';
 
 const sendToken = async (token: ITokenObject, recipient: string, amount: string | number, callback: (error: Error, receipt?: string) => void, confirmationCallBack: () => void) => {
-  const wallet = Wallet.getInstance();
+  const wallet = Wallet.getClientInstance();
   try {
     if (token.address) {
       const value = Utils.toDecimals(amount, token.decimals);

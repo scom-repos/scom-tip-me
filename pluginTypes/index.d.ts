@@ -29,48 +29,27 @@ declare module "@scom/scom-tip-me/interface.tsx" {
         showHeader?: boolean;
     }
 }
-/// <amd-module name="@scom/scom-tip-me/store/index.ts" />
-declare module "@scom/scom-tip-me/store/index.ts" {
-    import { INetwork } from "@ijstech/eth-wallet";
-    export const enum EventId {
-        chainChanged = "chainChanged",
-        Paid = "Paid"
-    }
-    export enum WalletPlugin {
-        MetaMask = "metamask",
-        WalletConnect = "walletconnect"
-    }
-    export const getNetworkInfo: (chainId: number) => INetwork;
-    export const getSupportedNetworks: () => INetwork[];
-    export const state: {
-        networkMap: {
-            [key: number]: INetwork;
-        };
-        ipfsGatewayUrl: string;
-        rpcWalletId: string;
-    };
-    export const setDataFromSCConfig: (options: any) => void;
-    export const setIPFSGatewayUrl: (url: string) => void;
-    export const getIPFSGatewayUrl: () => string;
-    export const getImageIpfsUrl: (url: string) => string;
-    export function isClientWalletConnected(): boolean;
-    export function isRpcWalletConnected(): boolean;
-    export function getChainId(): number;
-    export function initRpcWallet(defaultChainId: number): string;
-    export function getRpcWallet(): import("@ijstech/eth-wallet").IRpcWallet;
-    export function getClientWallet(): import("@ijstech/eth-wallet").IClientWallet;
-}
-/// <amd-module name="@scom/scom-tip-me/utils/token.ts" />
-declare module "@scom/scom-tip-me/utils/token.ts" {
-    import { BigNumber, IWallet, ISendTxEventsOptions } from "@ijstech/eth-wallet";
-    import { ITokenObject } from "@scom/scom-token-list";
-    export const getERC20Amount: (wallet: IWallet, tokenAddress: string, decimals: number) => Promise<BigNumber>;
-    export const getTokenBalance: (token: ITokenObject) => Promise<BigNumber>;
-    export const registerSendTxEvents: (sendTxEventHandlers: ISendTxEventsOptions) => void;
-}
 /// <amd-module name="@scom/scom-tip-me/utils/index.ts" />
 declare module "@scom/scom-tip-me/utils/index.ts" {
-    export { getTokenBalance, registerSendTxEvents } from "@scom/scom-tip-me/utils/token.ts";
+    import { ISendTxEventsOptions } from "@ijstech/eth-wallet";
+    export const registerSendTxEvents: (sendTxEventHandlers: ISendTxEventsOptions) => void;
+}
+/// <amd-module name="@scom/scom-tip-me/store/index.ts" />
+declare module "@scom/scom-tip-me/store/index.ts" {
+    export const enum EventId {
+        Paid = "Paid"
+    }
+    export class State {
+        ipfsGatewayUrl: string;
+        rpcWalletId: string;
+        constructor(options: any);
+        private initData;
+        initRpcWallet(defaultChainId: number): string;
+        getRpcWallet(): import("@ijstech/eth-wallet").IRpcWallet;
+        isRpcWalletConnected(): boolean;
+        getChainId(): number;
+    }
+    export function isClientWalletConnected(): boolean;
 }
 /// <amd-module name="@scom/scom-tip-me/index.css.ts" />
 declare module "@scom/scom-tip-me/index.css.ts" {
@@ -9799,6 +9778,7 @@ declare module "@scom/scom-tip-me" {
         }
     }
     export default class ScomTipMe extends Module {
+        private state;
         private imgLogo;
         private lbDescription;
         private tokenInput;
@@ -9813,12 +9793,13 @@ declare module "@scom/scom-tip-me" {
         tag: any;
         defaultEdit: boolean;
         private rpcWalletEvents;
-        private clientEvents;
         constructor(parent?: Container, options?: any);
+        removeRpcWalletEvents(): void;
         onHide(): void;
-        private registerEvent;
         private onChainChanged;
         static create(options?: ScomTipMeElement, parent?: Container): Promise<ScomTipMe>;
+        private get chainId();
+        private get rpcWallet();
         get wallets(): IWalletPlugin[];
         set wallets(value: IWalletPlugin[]);
         get networks(): INetworkConfig[];
@@ -9859,6 +9840,7 @@ declare module "@scom/scom-tip-me" {
             getTag: any;
         })[];
         private getData;
+        private resetRpcWallet;
         private setData;
         private getTag;
         private updateTag;
@@ -9866,6 +9848,7 @@ declare module "@scom/scom-tip-me" {
         private updateStyle;
         private updateTheme;
         private initializeWidgetConfig;
+        private initWallet;
         private refreshTokenInfo;
         private updateTokenObject;
         private updateTokenInput;

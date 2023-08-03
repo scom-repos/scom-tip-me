@@ -1,0 +1,16 @@
+{
+    "name": "@scom/scom-tip-me",
+    "type": "widget",
+    "version": "0.1.0",
+    "dependencies": [
+        "@ijstech/components",
+        "@ijstech/eth-wallet",
+        "@scom/scom-network-picker",
+        "@scom/scom-token-list",
+        "@scom/scom-wallet-modal",
+        "@ijstech/eth-contract",
+        "@scom/scom-dapp-container",
+        "@scom/scom-token-input",
+        "@scom/scom-tx-status-modal"
+    ]
+}
