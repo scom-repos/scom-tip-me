@@ -18,7 +18,7 @@ import { ChainNativeTokenByChainId, DefaultERC20Tokens, ITokenObject, tokenStore
 import { buttonStyle, dappContainerStyle, tokenInputStyle } from './index.css';
 import { sendToken } from './API';
 import configData from './data.json';
-import formSchema from './formSchema.json';
+import formSchema from './formSchema';
 import { INetworkConfig } from '@scom/scom-network-picker';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import ScomTokenInput from '@scom/scom-token-input';
@@ -210,7 +210,9 @@ export default class ScomTipMe extends Module {
             redo: () => { }
           }
         },
-        userInputDataSchema: formSchema.general.dataSchema
+        userInputDataSchema: formSchema.general.dataSchema,
+        userInputUISchema: formSchema.general.uiSchema,
+        customControls: formSchema.general.customControls(this.rpcWallet?.instanceId)
       },
       {
         name: 'Theme Settings',

@@ -1,6 +1,6 @@
 import { Utils, Wallet } from '@ijstech/eth-wallet';
 import { ITokenObject } from '@scom/scom-token-list';
-import { Contracts } from './contracts/oswap-openswap-contract/index';
+import { Contracts } from '@scom/oswap-openswap-contract';
 
 const sendToken = async (token: ITokenObject, recipient: string, amount: string | number, callback: (error: Error, receipt?: string) => void, confirmationCallBack: () => void) => {
   const wallet = Wallet.getClientInstance();
