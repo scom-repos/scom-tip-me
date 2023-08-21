@@ -7,10 +7,13 @@
         "@ijstech/eth-wallet",
         "@scom/scom-network-picker",
         "@scom/scom-token-list",
+        "@scom/scom-network-list",
         "@scom/scom-wallet-modal",
-        "@ijstech/eth-contract",
-        "@scom/scom-dapp-container",
+        "@scom/oswap-openswap-contract",
+        "@scom/scom-token-modal",
         "@scom/scom-token-input",
+        "@scom/scom-multicall",
+        "@scom/scom-dapp-container",
         "@scom/scom-tx-status-modal"
     ]
 }

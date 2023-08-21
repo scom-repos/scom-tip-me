@@ -19,7 +19,8 @@
     "@scom/scom-wallet-modal": "*",
     "@scom/scom-network-picker": "*",
     "@scom/scom-token-list": "*",
-    "@scom/scom-network-list": "*"
+    "@scom/scom-network-list": "*",
+    "@scom/oswap-openswap-contract": "*"
   },
   "menus": [
     {
