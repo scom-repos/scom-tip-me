@@ -541,6 +541,7 @@ export default class ScomTipMe extends Module {
             <i-label id="lbDescription" font={{ bold: true, size: '24px' }} class="text-center" />
             <i-scom-token-input
               id="tokenInput"
+              title="&nbsp;"
               class={tokenInputStyle}
               onInputAmountChanged={this.onInputAmountChanged}
               onSetMaxBalance={this.onSetMaxBalance}

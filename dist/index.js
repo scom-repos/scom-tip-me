@@ -839,7 +839,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                     this.$render("i-vstack", { gap: 10, verticalAlignment: "center", horizontalAlignment: "center" },
                         this.$render("i-image", { id: "imgLogo", width: 100, height: 100 }),
                         this.$render("i-label", { id: "lbDescription", font: { bold: true, size: '24px' }, class: "text-center" }),
-                        this.$render("i-scom-token-input", { id: "tokenInput", class: index_css_1.tokenInputStyle, onInputAmountChanged: this.onInputAmountChanged, onSetMaxBalance: this.onSetMaxBalance, onSelectToken: (token) => this.onSelectToken(token) }),
+                        this.$render("i-scom-token-input", { id: "tokenInput", title: "\u00A0", class: index_css_1.tokenInputStyle, onInputAmountChanged: this.onInputAmountChanged, onSetMaxBalance: this.onSetMaxBalance, onSelectToken: (token) => this.onSelectToken(token) }),
                         this.$render("i-button", { id: "btnSend", caption: "Send", class: index_css_1.buttonStyle, width: 200, maxWidth: "100%", padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, font: { size: '1rem', color: Theme.colors.primary.contrastText }, rightIcon: { visible: false, spin: true, fill: Theme.colors.primary.contrastText }, onClick: this.sendToken })),
                     this.$render("i-scom-tx-status-modal", { id: "txStatusModal" }),
                     this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));
