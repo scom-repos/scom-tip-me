@@ -111,7 +111,7 @@ define("@scom/scom-tip-me/index.css.ts", ["require", "exports", "@ijstech/compon
     exports.tokenInputStyle = components_2.Styles.style({
         $nest: {
             '#gridTokenInput': {
-                borderRadius: 16,
+                borderRadius: 8,
                 paddingBlock: '8px !important'
             },
             '#btnToken': {
@@ -634,6 +634,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                         };
                         return {
                             execute: async () => {
+                                var _a, _b;
                                 _oldData = Object.assign({}, this._data);
                                 if (userInputData.logo != undefined)
                                     this._data.logo = userInputData.logo;
@@ -641,7 +642,23 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                                     this._data.description = userInputData.description;
                                 if (userInputData.recipient != undefined)
                                     this._data.recipient = userInputData.recipient;
-                                this._data.tokens = userInputData.tokens || [];
+                                this._data.tokens = [];
+                                if (userInputData.tokens) {
+                                    for (let inputToken of userInputData.tokens) {
+                                        const tokenAddress = (_a = inputToken.address) === null || _a === void 0 ? void 0 : _a.toLowerCase();
+                                        const nativeToken = scom_token_list_1.ChainNativeTokenByChainId[inputToken.chainId];
+                                        if (!tokenAddress || tokenAddress === ((_b = nativeToken === null || nativeToken === void 0 ? void 0 : nativeToken.symbol) === null || _b === void 0 ? void 0 : _b.toLowerCase())) {
+                                            if (nativeToken)
+                                                this._data.tokens.push(Object.assign(Object.assign({}, nativeToken), { chainId: inputToken.chainId }));
+                                        }
+                                        else {
+                                            const tokens = scom_token_list_1.DefaultERC20Tokens[inputToken.chainId];
+                                            const token = tokens.find(v => v.address === inputToken.address);
+                                            if (token)
+                                                this._data.tokens.push(Object.assign(Object.assign({}, token), { chainId: inputToken.chainId }));
+                                        }
+                                    }
+                                }
                                 await this.resetRpcWallet();
                                 this.initializeWidgetConfig();
                                 if (builder === null || builder === void 0 ? void 0 : builder.setData)
@@ -839,7 +856,7 @@ define("@scom/scom-tip-me", ["require", "exports", "@ijstech/components", "@ijst
                     this.$render("i-vstack", { gap: 10, verticalAlignment: "center", horizontalAlignment: "center" },
                         this.$render("i-image", { id: "imgLogo", width: 100, height: 100 }),
                         this.$render("i-label", { id: "lbDescription", font: { bold: true, size: '24px' }, class: "text-center" }),
-                        this.$render("i-scom-token-input", { id: "tokenInput", title: "\u00A0", class: index_css_1.tokenInputStyle, onInputAmountChanged: this.onInputAmountChanged, onSetMaxBalance: this.onSetMaxBalance, onSelectToken: (token) => this.onSelectToken(token) }),
+                        this.$render("i-scom-token-input", { id: "tokenInput", title: "\u00A0", type: "combobox", class: index_css_1.tokenInputStyle, onInputAmountChanged: this.onInputAmountChanged, onSetMaxBalance: this.onSetMaxBalance, onSelectToken: (token) => this.onSelectToken(token) }),
                         this.$render("i-button", { id: "btnSend", caption: "Send", class: index_css_1.buttonStyle, width: 200, maxWidth: "100%", padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, font: { size: '1rem', color: Theme.colors.primary.contrastText }, rightIcon: { visible: false, spin: true, fill: Theme.colors.primary.contrastText }, onClick: this.sendToken })),
                     this.$render("i-scom-tx-status-modal", { id: "txStatusModal" }),
                     this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));

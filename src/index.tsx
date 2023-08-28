@@ -11,7 +11,7 @@ import {
   ControlElement
 } from '@ijstech/components';
 import { BigNumber, Constants, IEventBusRegistry, Wallet } from '@ijstech/eth-wallet';
-import { ICustomToken, IEmbedData } from './interface';
+import { IEmbedData } from './interface';
 import { registerSendTxEvents } from './utils/index';
 import { EventId, isClientWalletConnected, State } from './store/index';
 import { ChainNativeTokenByChainId, DefaultERC20Tokens, ITokenObject, tokenStore } from '@scom/scom-token-list';
@@ -74,7 +74,7 @@ export default class ScomTipMe extends Module {
   defaultEdit: boolean = true;
   private rpcWalletEvents: IEventBusRegistry[] = [];
 
-  constructor(parent?: Container, options?: any) {
+  constructor(parent?: Container, options?: ScomTipMeElement) {
     super(parent, options);
     this.state = new State(configData);
     this.$eventBus = application.EventBus;
@@ -159,25 +159,25 @@ export default class ScomTipMe extends Module {
   get tokens() {
     return this._data.tokens ?? [];
   }
-  set tokens(value: ICustomToken[]) {
+  set tokens(value: ITokenObject[]) {
     this._data.tokens = value;
   }
 
   private get tokenList() {
     if (!this.tokens) return [];
-    let list = [];
+    let list: ITokenObject[] = [];
     for (const inputToken of this.tokens) {
       const tokenAddress = inputToken.address?.toLowerCase();
-      const nativeToken = ChainNativeTokenByChainId[inputToken.chainId] as any;
+      const nativeToken = ChainNativeTokenByChainId[inputToken.chainId];
       if (!tokenAddress || tokenAddress === nativeToken?.symbol?.toLowerCase()) {
         if (nativeToken) list.push({ ...nativeToken, chainId: inputToken.chainId });
       } else {
         const tokens = DefaultERC20Tokens[inputToken.chainId];
-        const token = tokens.find(v => v.address?.toLowerCase() === tokenAddress) as any;
+        const token = tokens.find(v => v.address?.toLowerCase() === tokenAddress);
         if (token) list.push({ ...token, chainId: inputToken.chainId });
       }
     }
-    return list as ICustomToken[];
+    return list;
   }
 
   private _getActions() {
@@ -197,7 +197,21 @@ export default class ScomTipMe extends Module {
               if (userInputData.logo != undefined) this._data.logo = userInputData.logo;
               if (userInputData.description != undefined) this._data.description = userInputData.description;
               if (userInputData.recipient != undefined) this._data.recipient = userInputData.recipient;
-              this._data.tokens = userInputData.tokens || [];
+              this._data.tokens = [];
+              if (userInputData.tokens) {
+                for (let inputToken of userInputData.tokens) {
+                  const tokenAddress = inputToken.address?.toLowerCase();
+                  const nativeToken = ChainNativeTokenByChainId[inputToken.chainId];
+                  if (!tokenAddress || tokenAddress === nativeToken?.symbol?.toLowerCase()) {
+                    if (nativeToken) this._data.tokens.push({ ...nativeToken, chainId: inputToken.chainId });
+                  }
+                  else {
+                    const tokens = DefaultERC20Tokens[inputToken.chainId]
+                    const token = tokens.find(v => v.address === inputToken.address);
+                    if (token) this._data.tokens.push({ ...token, chainId: inputToken.chainId });
+                  }
+                }
+              }
               await this.resetRpcWallet();
               this.initializeWidgetConfig();
               if (builder?.setData) builder.setData(this._data);
@@ -542,6 +556,7 @@ export default class ScomTipMe extends Module {
             <i-scom-token-input
               id="tokenInput"
               title="&nbsp;"
+              type="combobox"
               class={tokenInputStyle}
               onInputAmountChanged={this.onInputAmountChanged}
               onSetMaxBalance={this.onSetMaxBalance}

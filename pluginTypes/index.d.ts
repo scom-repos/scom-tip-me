@@ -7,13 +7,10 @@ declare module "@scom/scom-tip-me/interface.tsx" {
     import { INetworkConfig } from "@scom/scom-network-picker";
     import { ITokenObject } from "@scom/scom-token-list";
     import { IWalletPlugin } from "@scom/scom-wallet-modal";
-    export interface ICustomToken extends ITokenObject {
-        chainId: number;
-    }
     export interface ITipMe {
         logo: string;
         description: string;
-        tokens: ICustomToken[];
+        tokens: ITokenObject[];
         recipient: string;
         defaultChainId: number;
         wallets: IWalletPlugin[];
@@ -214,7 +211,8 @@ declare module "@scom/scom-tip-me/formSchema.ts" {
 /// <amd-module name="@scom/scom-tip-me" />
 declare module "@scom/scom-tip-me" {
     import { Module, Container, ControlElement } from '@ijstech/components';
-    import { ICustomToken, IEmbedData } from "@scom/scom-tip-me/interface.tsx";
+    import { IEmbedData } from "@scom/scom-tip-me/interface.tsx";
+    import { ITokenObject } from '@scom/scom-token-list';
     import { INetworkConfig } from '@scom/scom-network-picker';
     import { IWalletPlugin } from '@scom/scom-wallet-modal';
     interface ScomTipMeElement extends ControlElement {
@@ -254,7 +252,7 @@ declare module "@scom/scom-tip-me" {
         tag: any;
         defaultEdit: boolean;
         private rpcWalletEvents;
-        constructor(parent?: Container, options?: any);
+        constructor(parent?: Container, options?: ScomTipMeElement);
         removeRpcWalletEvents(): void;
         onHide(): void;
         private onChainChanged;
@@ -273,8 +271,8 @@ declare module "@scom/scom-tip-me" {
         set description(value: string);
         get logo(): string;
         set logo(value: string);
-        get tokens(): ICustomToken[];
-        set tokens(value: ICustomToken[]);
+        get tokens(): ITokenObject[];
+        set tokens(value: ITokenObject[]);
         private get tokenList();
         private _getActions;
         getConfigurators(): ({
