@@ -90,119 +90,128 @@ declare module "@scom/scom-tip-me/formSchema.ts" {
     import ScomNetworkPicker from '@scom/scom-network-picker';
     import ScomTokenInput from '@scom/scom-token-input';
     const _default_1: {
-        general: {
-            dataSchema: {
-                type: string;
-                properties: {
-                    logo: {
+        dataSchema: {
+            type: string;
+            properties: {
+                logo: {
+                    type: string;
+                    format: string;
+                    required: boolean;
+                };
+                description: {
+                    type: string;
+                    required: boolean;
+                };
+                recipient: {
+                    type: string;
+                    required: boolean;
+                };
+                tokens: {
+                    type: string;
+                    required: boolean;
+                    items: {
                         type: string;
-                        format: string;
-                        required: boolean;
-                    };
-                    description: {
-                        type: string;
-                        required: boolean;
-                    };
-                    recipient: {
-                        type: string;
-                        required: boolean;
-                    };
-                    tokens: {
-                        type: string;
-                        required: boolean;
-                        items: {
-                            type: string;
-                            properties: {
-                                chainId: {
-                                    type: string;
-                                    enum: number[];
-                                    required: boolean;
-                                };
-                                address: {
-                                    type: string;
-                                    required: boolean;
-                                };
+                        properties: {
+                            chainId: {
+                                type: string;
+                                enum: number[];
+                                required: boolean;
+                            };
+                            address: {
+                                type: string;
+                                required: boolean;
                             };
                         };
                     };
                 };
-            };
-            uiSchema: {
-                type: string;
-                elements: ({
+                dark: {
                     type: string;
-                    scope: string;
-                    options?: undefined;
-                } | {
-                    type: string;
-                    scope: string;
-                    options: {
-                        detail: {
+                    properties: {
+                        backgroundColor: {
                             type: string;
+                            format: string;
+                        };
+                        fontColor: {
+                            type: string;
+                            format: string;
+                        };
+                        inputBackgroundColor: {
+                            type: string;
+                            format: string;
+                        };
+                        inputFontColor: {
+                            type: string;
+                            format: string;
                         };
                     };
-                })[];
-            };
-            customControls(rpcWalletId: string): {
-                "#/properties/tokens/properties/chainId": {
-                    render: () => ScomNetworkPicker;
-                    getData: (control: ScomNetworkPicker) => number;
-                    setData: (control: ScomNetworkPicker, value: number) => void;
                 };
-                "#/properties/tokens/properties/address": {
-                    render: () => ScomTokenInput;
-                    getData: (control: ScomTokenInput) => string;
-                    setData: (control: ScomTokenInput, value: string) => void;
+                light: {
+                    type: string;
+                    properties: {
+                        backgroundColor: {
+                            type: string;
+                            format: string;
+                        };
+                        fontColor: {
+                            type: string;
+                            format: string;
+                        };
+                        inputBackgroundColor: {
+                            type: string;
+                            format: string;
+                        };
+                        inputFontColor: {
+                            type: string;
+                            format: string;
+                        };
+                    };
                 };
             };
         };
-        theme: {
-            dataSchema: {
+        uiSchema: {
+            type: string;
+            elements: ({
                 type: string;
-                properties: {
-                    dark: {
+                label: string;
+                elements: {
+                    type: string;
+                    elements: ({
                         type: string;
-                        properties: {
-                            backgroundColor: {
+                        scope: string;
+                        options?: undefined;
+                    } | {
+                        type: string;
+                        scope: string;
+                        options: {
+                            detail: {
                                 type: string;
-                                format: string;
-                            };
-                            fontColor: {
-                                type: string;
-                                format: string;
-                            };
-                            inputBackgroundColor: {
-                                type: string;
-                                format: string;
-                            };
-                            inputFontColor: {
-                                type: string;
-                                format: string;
                             };
                         };
-                    };
-                    light: {
+                    })[];
+                }[];
+            } | {
+                type: string;
+                label: string;
+                elements: {
+                    type: string;
+                    elements: {
                         type: string;
-                        properties: {
-                            backgroundColor: {
-                                type: string;
-                                format: string;
-                            };
-                            fontColor: {
-                                type: string;
-                                format: string;
-                            };
-                            inputBackgroundColor: {
-                                type: string;
-                                format: string;
-                            };
-                            inputFontColor: {
-                                type: string;
-                                format: string;
-                            };
-                        };
-                    };
-                };
+                        label: string;
+                        scope: string;
+                    }[];
+                }[];
+            })[];
+        };
+        customControls(rpcWalletId: string): {
+            "#/properties/tokens/properties/chainId": {
+                render: () => ScomNetworkPicker;
+                getData: (control: ScomNetworkPicker) => number;
+                setData: (control: ScomNetworkPicker, value: number) => void;
+            };
+            "#/properties/tokens/properties/address": {
+                render: () => ScomTokenInput;
+                getData: (control: ScomTokenInput) => string;
+                setData: (control: ScomTokenInput, value: string) => void;
             };
         };
     };

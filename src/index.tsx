@@ -183,23 +183,38 @@ export default class ScomTipMe extends Module {
   private _getActions() {
     const actions = [
       {
-        name: 'Settings',
-        icon: 'cog',
+        name: 'Edit',
+        icon: 'edit',
         command: (builder: any, userInputData: any) => {
-          let _oldData: IEmbedData = {
+          let oldData: IEmbedData = {
             wallets: [],
             networks: [],
             defaultChainId: 0
           };
+          let oldTag = {};
           return {
             execute: async () => {
-              _oldData = { ...this._data };
-              if (userInputData.logo != undefined) this._data.logo = userInputData.logo;
-              if (userInputData.description != undefined) this._data.description = userInputData.description;
-              if (userInputData.recipient != undefined) this._data.recipient = userInputData.recipient;
+              oldData = JSON.parse(JSON.stringify(this._data));
+              const {
+                logo,
+                description,
+                recipient,
+                tokens,
+                ...themeSettings
+              } = userInputData;
+
+              const generalSettings = {
+                logo,
+                description,
+                recipient,
+                tokens
+              };
+              if (generalSettings.logo != undefined) this._data.logo = generalSettings.logo;
+              if (generalSettings.description != undefined) this._data.description = generalSettings.description;
+              if (generalSettings.recipient != undefined) this._data.recipient = generalSettings.recipient;
               this._data.tokens = [];
-              if (userInputData.tokens) {
-                for (let inputToken of userInputData.tokens) {
+              if (generalSettings.tokens) {
+                for (let inputToken of generalSettings.tokens) {
                   const tokenAddress = inputToken.address?.toLowerCase();
                   const nativeToken = ChainNativeTokenByChainId[inputToken.chainId];
                   if (!tokenAddress || tokenAddress === nativeToken?.symbol?.toLowerCase()) {
@@ -215,43 +230,28 @@ export default class ScomTipMe extends Module {
               await this.resetRpcWallet();
               this.initializeWidgetConfig();
               if (builder?.setData) builder.setData(this._data);
+
+              oldTag = JSON.parse(JSON.stringify(this.tag));
+              if (builder?.setTag) builder.setTag(themeSettings);
+              else this.setTag(themeSettings);
+              if (this.dappContainer) this.dappContainer.setTag(themeSettings);
             },
             undo: async () => {
-              this._data = { ..._oldData };
+              this._data = JSON.parse(JSON.stringify(oldData));
               this.initializeWidgetConfig();
               if (builder?.setData) builder.setData(this._data);
-            },
-            redo: () => { }
-          }
-        },
-        userInputDataSchema: formSchema.general.dataSchema,
-        userInputUISchema: formSchema.general.uiSchema,
-        customControls: formSchema.general.customControls(this.rpcWallet?.instanceId)
-      },
-      {
-        name: 'Theme Settings',
-        icon: 'palette',
-        command: (builder: any, userInputData: any) => {
-          let oldTag = {};
-          return {
-            execute: async () => {
-              if (!userInputData) return;
-              oldTag = JSON.parse(JSON.stringify(this.tag));
-              if (builder) builder.setTag(userInputData);
-              else this.setTag(userInputData);
-              if (this.dappContainer) this.dappContainer.setTag(userInputData);
-            },
-            undo: () => {
-              if (!userInputData) return;
+
               this.tag = JSON.parse(JSON.stringify(oldTag));
-              if (builder) builder.setTag(this.tag);
+              if (builder?.setTag) builder.setTag(this.tag);
               else this.setTag(this.tag);
               if (this.dappContainer) this.dappContainer.setTag(this.tag);
             },
             redo: () => { }
           }
         },
-        userInputDataSchema: formSchema.theme.dataSchema
+        userInputDataSchema: formSchema.dataSchema,
+        userInputUISchema: formSchema.uiSchema,
+        customControls: formSchema.customControls(this.rpcWallet?.instanceId)
       }
     ]
 
