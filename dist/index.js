@@ -338,7 +338,7 @@ define("@scom/scom-tip-me/formSchema.ts", ["require", "exports", "@scom/scom-net
                             onCustomNetworkSelected: () => {
                                 var _a;
                                 const chainId = (_a = networkPickers[idx].selectedNetwork) === null || _a === void 0 ? void 0 : _a.chainId;
-                                tokenInputs[idx].targetChainId = chainId;
+                                tokenInputs[idx].chainId = chainId;
                             }
                         });
                         return networkPickers[idx];
@@ -351,7 +351,7 @@ define("@scom/scom-tip-me/formSchema.ts", ["require", "exports", "@scom/scom-net
                         control.setNetworkByChainId(value);
                         const idx = networkPickers.findIndex(f => f === control);
                         if (tokenInputs[idx])
-                            tokenInputs[idx].targetChainId = value;
+                            tokenInputs[idx].chainId = value;
                     }
                 },
                 "#/properties/tokens/properties/address": {
@@ -366,8 +366,8 @@ define("@scom/scom-tip-me/formSchema.ts", ["require", "exports", "@scom/scom-net
                         });
                         tokenInputs[idx].rpcWalletId = rpcWalletId;
                         const chainId = (_b = (_a = networkPickers[idx]) === null || _a === void 0 ? void 0 : _a.selectedNetwork) === null || _b === void 0 ? void 0 : _b.chainId;
-                        if (chainId && tokenInputs[idx].targetChainId !== chainId) {
-                            tokenInputs[idx].targetChainId = chainId;
+                        if (chainId && tokenInputs[idx].chainId !== chainId) {
+                            tokenInputs[idx].chainId = chainId;
                         }
                         return tokenInputs[idx];
                     },
